@@ -1,0 +1,2 @@
+extract $
+print("Hello World!")
