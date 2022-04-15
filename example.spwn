@@ -4,24 +4,41 @@ import "./src"
 output = @trasm::new(u'
     ; this example is obviously subject to changes
 
-    .section .constants
-        hello: "Hello world"
+    consts:
+        hello   str "Hello world"    ; declare string
+        thing   gr  3                ; group 3
+        conter  id  ?                ; next free id
 
-    .section .variables
-        a: c10  ; counter (initialized at 10) 
-        b: c20
-        c: c0
+    vars:
+        a   ctr 10
+        b   ctr 20
 
-    .start:         ; synonym for ".0g:"
-        print hello ; print the string
-        wait 2      ; waits for 2 seconds
-        spwn 10g    ; spawn group 10
+    _start:
+        out     hello       ; print (  );;
+        wait    2
+        call    func        ; call the func func
+        pop     conter      ; set conter to the thing from the stack and pop it or somethinf
+        add     conter,1    ; add 1 to the conter id (for no reason, just like this enttire file)
+        call    thing       ; run the trigger function with group "thing" or something
+        mov*    6,9,+42     ; move gruop 6(inferred type ) x: 9 (absolute) and y: 42 (relative) but also * is the -> from spwn or something
+        mov     5,-10,10    ; move group 5 (inferred type) x: -10 (relative) and y: 10 (absolute)
 
-    .10g:
-        add a, b    ; out = a + b
-        mov c, out  ; sets c to the sum of a and b
-        div c, a    ; out = c / a
-        mov a, out  ; sets a to the quotient of c and a
+    !thing:                 ; !group → trigger function
+        c:      ctr 0       ; local coutner variable (c = 0)
+        add     c,a         ; c += a
+        add     c,b         ; c += b
+        div     c,a         ; c /= a
+        set     a,c         ; a = c
+
+    !10:                    ; trigger funciton gro p 10
+        add     a,b         ; a += b
+
+    .func:                  ; declare a function called "func"
+        out     hello    
+        push    conter      ; add conter to stack or treat it as a return value
+
+    ; idk its just a bunch of made up shit annywayya7
+    ; looks assembly enugh to me,
 ')
 
 $.print(output)
