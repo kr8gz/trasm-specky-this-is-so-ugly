@@ -1,0 +1,27 @@
+import "./src"
+
+
+output = @trasm::new(u'
+    ; this example is obviously subject to changes
+
+    .section .constants
+        hello: "Hello world"
+
+    .section .variables
+        a: c10  ; counter (initialized at 10) 
+        b: c20
+        c: c0
+
+    .start:         ; synonym for ".0g:"
+        print hello ; print the string
+        wait 2      ; waits for 2 seconds
+        spwn 10g    ; spawn group 10
+
+    .10g:
+        add a, b    ; out = a + b
+        mov c, out  ; sets c to the sum of a and b
+        div c, a    ; out = c / a
+        mov a, out  ; sets a to the quotient of c and a
+')
+
+$.print(output)
