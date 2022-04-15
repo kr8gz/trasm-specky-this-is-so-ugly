@@ -1,2 +1,30 @@
+#[cache_output]
+
 extract $
 print("Hello World!")
+
+#[desc("TRigger ASseMbly compiler")]
+type @trasm
+
+impl @trasm {
+    new: #[constructor, desc("Generates a TRASM output from code")] (code: @string, run: @bool = true) {
+        let trasm = @trasm::{
+            code: code,
+            operations: [],
+            groups: [],
+            labels: [],
+        }
+        
+        lines = code.split("\n").filter(l => l.trim() != "" && !l.l_trim().starts_with(";"))
+        return lines.map(line => @trasm::parse_line(line))
+    },
+    parse_line: #[desc("Parses a line of TRASM")] (line: @string) {
+        let [operator, ..arguments] = line.replace(r"\s+"," ").trim().split(" ")
+        let arguments = arguments.join(" ").split(",").map(a => a.trim())
+
+        return {
+            operator: operator.lowercase(),
+            arguments: arguments,
+        }
+    },
+}
