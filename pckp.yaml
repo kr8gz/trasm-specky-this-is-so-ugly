@@ -1,0 +1,7 @@
+%YAML 1.2
+---
+
+name: trasm # name may be subect to alterations
+version: 0.0.1
+folders:
+  - src
