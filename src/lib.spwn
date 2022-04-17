@@ -10,21 +10,78 @@ impl @trasm {
     new: #[constructor, desc("Generates a TRASM output from code")] (code: @string, run: @bool = true) {
         let trasm = @trasm::{
             code: code,
-            operations: [],
-            groups: [],
-            labels: [],
+            parsed: @trasm::parse(code),
         }
-        
-        lines = code.split("\n").filter(l => l.trim() != "" && !l.l_trim().starts_with(";"))
-        return lines.map(line => @trasm::parse_line(line))
+        return trasm
     },
-    parse_line: #[desc("Parses a line of TRASM")] (line: @string) {
-        let [operator, ..arguments] = line.replace(r"\s+"," ").trim().split(" ")
-        let arguments = arguments.join(" ").split(",").map(a => a.trim())
-
-        return {
-            operator: operator.lowercase(),
-            arguments: arguments,
+    parse: #[desc("Parses the code")] (code: @string) {
+        lines = code.split("\n")
+        let output = []
+        for i in 0..lines.length {
+            output.push(@trasm::parse_line(lines[i], i))
         }
+        return output
+    },
+    parse_line: #[desc("Parses a line of code")] (line: @string, index: @number) {
+        let previous = []
+        let current = ""
+        let is_string = false
+
+        for char in line {
+            let skip = false
+
+            if is_string != false {
+                match char {
+                    in['"',"'"]: (){
+                        match char == is_string {
+                            ==true: (is_string = false),
+                            ==false: (current += char),
+                        }
+                    }(),
+                    else: (current += char),
+                }
+                if is_string == false {
+                    previous.push(current)
+                    current = ""
+                }
+                continue
+            }
+
+            match char {
+                ==' ': (){
+                    if is_string != false {
+                        current += char
+                    } else if current != "" {
+                        previous.push(current)
+                        current = ""
+                    }
+                }(),
+                ==',': (){
+                    if is_string {
+                        current += char
+                    } else if current != "" {
+                        previous.push(current)
+                        previous.push(",")
+                        current = ""
+                    }
+                }(),
+                =='"': (is_string = '"'),
+                =="'": (is_string = "'"),
+                ==';': (skip = true),
+                else: (current += char),
+            }
+            if skip { break }
+        }
+
+        if current != "" { previous.push(current) }
+
+        if is_string != false {
+            return @trasm::error_line(line, index, "Unterminated string")
+        }
+
+        return previous
+    },
+    error_line: #[desc("Prints an error line")] (line: @string, index: @number, error: @string) {
+        $.print("{} | {}\nERROR: {}".fmt([index + 1, line, error]))
     },
 }

@@ -8,14 +8,17 @@ output = @trasm::new(u'
         hello   str "Hello world"    ; declare string
         thing   gr  3                ; group 3
         conter  id  ?                ; next free id
+        mogus   str \'sus\'
 
     .vars
         a   ctr 10
         b   ctr 20
+        sussy str \'amog us\'
 
     start:                  ; synonym for "0:"
         out     hello       ; $.print(hello)
         wait    2
+
         call    func         ; call the func func
         pop     conter       ; set conter to the thing from the stack and pop it or somethinf
         add     conter, 1    ; add 1 to the conter id (for no reason, just like this enttire file)
@@ -42,4 +45,4 @@ output = @trasm::new(u'
     ; looks assembly enugh to me,
 ')
 
-$.print(output)
+$.print(output.parsed)
