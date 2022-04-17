@@ -26,6 +26,14 @@ impl @trasm {
         // "what isn't current is previous" - specky 2022
         let previous = []
         let current = ""
+        // "what isnt current or future is previous" - bombie 2022
+        future = (force: @bool = false){
+            if current != "" || force {
+                previous.push(current)
+                current = ""
+            }
+        }
+
         let is_string = false
 
         for char in line {
@@ -34,8 +42,7 @@ impl @trasm {
             if is_string != false {
                 if char == is_string {
                     is_string = false
-                    previous.push(current)
-                    current = ""
+                    future(true)
                 } else {
                     current += char
                 }
@@ -43,17 +50,9 @@ impl @trasm {
             }
 
             match char {
-                ==' ': (){
-                    if current != "" {
-                        previous.push(current)
-                        current = ""
-                    }
-                }(),
+                ==' ': future(),
                 ==',': (){
-                    if current != "" {
-                        previous.push(current)
-                        current = ""
-                    }
+                    future()
                     previous.push(",")
                 }(),
                 in '"\'': (is_string = char),
@@ -63,8 +62,7 @@ impl @trasm {
             if skip { break }
         }
 
-        if current != "" { previous.push(current) }
-
+        future()
         if is_string != false {
             return @trasm::error_line(line, index, "Unterminated string")
         }
