@@ -23,6 +23,7 @@ impl @trasm {
         return output
     },
     parse_line: #[desc("Parses a line of code")] (line: @string, index: @number) {
+        // "what isn't current is previous" - specky 2022
         let previous = []
         let current = ""
         let is_string = false
@@ -31,18 +32,12 @@ impl @trasm {
             let skip = false
 
             if is_string != false {
-                match char {
-                    in['"',"'"]: (){
-                        match char == is_string {
-                            ==true: (is_string = false),
-                            ==false: (current += char),
-                        }
-                    }(),
-                    else: (current += char),
-                }
-                if is_string == false {
+                if char == is_string {
+                    is_string = false
                     previous.push(current)
                     current = ""
+                } else {
+                    current += char
                 }
                 continue
             }
@@ -61,8 +56,7 @@ impl @trasm {
                     }
                     previous.push(",")
                 }(),
-                =='"': (is_string = '"'),
-                =="'": (is_string = "'"),
+                in '"\'': (is_string = char),
                 ==';': (skip = true),
                 else: (current += char),
             }
