@@ -49,17 +49,13 @@ impl @trasm {
 
             match char {
                 ==' ': (){
-                    if is_string != false {
-                        current += char
-                    } else if current != "" {
+                    if current != "" {
                         previous.push(current)
                         current = ""
                     }
                 }(),
                 ==',': (){
-                    if is_string {
-                        current += char
-                    } else if current != "" {
+                    if current != "" {
                         previous.push(current)
                         previous.push(",")
                         current = ""
