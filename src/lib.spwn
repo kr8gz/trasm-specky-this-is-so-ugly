@@ -57,9 +57,9 @@ impl @trasm {
                 ==',': (){
                     if current != "" {
                         previous.push(current)
-                        previous.push(",")
                         current = ""
                     }
+                    previous.push(",")
                 }(),
                 =='"': (is_string = '"'),
                 =="'": (is_string = "'"),
