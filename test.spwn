@@ -1,0 +1,13 @@
+import "./src"
+
+// normal stuff
+$.assert(@trasm::new("").parsed == [[]])
+$.assert(@trasm::new("\n").parsed == [[],[]])
+$.assert(@trasm::new("operator arg1, arg2").parsed == [["operator", "arg1", ",", "arg2"]])
+$.assert(@trasm::new("sus:").parsed == [["sus:"]])
+$.assert(@trasm::new("; this is a comment").parsed == [[]])
+$.assert(@trasm::new("hello guys ; this is a comment").parsed == [["hello", "guys"]])
+// errors
+$.assert(@trasm::new("sussy 'uncompleted string").parsed == [null])
+
+$.print("\n\n\nseems good 😎")
