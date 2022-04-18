@@ -1,7 +1,7 @@
 #[cache_output]
 
-extract $
-print("Hello World!")
+lexed_line_pattern = [@string]|@NULL
+lexed_code_pattern = [lexed_line_pattern]
 
 #[desc("TRigger ASseMbly compiler")]
 type @trasm
@@ -10,19 +10,19 @@ impl @trasm {
     new: #[constructor, desc("Generates a TRASM output from code")] (code: @string, run: @bool = true) {
         let trasm = @trasm::{
             code: code,
-            parsed: @trasm::parse(code),
+            lexed: @trasm::lex(code),
         }
         return trasm
     },
-    parse: #[desc("Parses the code")] (code: @string) {
+    lex: #[desc("Lexes the code")] (code: @string) -> lexed_code_pattern {
         lines = code.split("\n")
         let output = []
         for i in 0..lines.length {
-            output.push(@trasm::parse_line(lines[i], i))
+            output.push(@trasm::lex_line(lines[i], i))
         }
         return output
     },
-    parse_line: #[desc("Parses a line of code")] (line: @string, index: @number) {
+    lex_line: #[desc("Lexes a line of code")] (line: @string, index: @number) -> lexed_line_pattern {
         // "what isn't current is previous" - specky 2022
         let previous = []
         let current = ""
@@ -53,7 +53,19 @@ impl @trasm {
                 ==' ': future(),
                 ==',': (){
                     future()
-                    previous.push(",")
+                    previous.push(char)
+                }(),
+                ==':': (){
+                    if previous.length == 0 {
+                        future()
+                        previous.push(char)
+                    } else { current += char }
+                }(),
+                =='.': (){
+                    if previous.length == 0 && current == "" {
+                        current += char;
+                        future()
+                    } else { current += char }
                 }(),
                 in '"\'': (is_string = char),
                 ==';': (skip = true),
@@ -63,34 +75,37 @@ impl @trasm {
         }
 
         future()
+
         if is_string != false {
             return @trasm::error_line(line, index, "Unterminated string")
         }
 
         return previous
     },
-    run: #[desc("Runs the code")] (self) {
-        for i in 0..self.parsed.length {
-            @trasm::parse_line(lines[i], i)
+    parse: #[desc("Parses the lexed code")] (self) -> @NULL {
+        if !$.mutability(self) {
+            throw "Cannot save parsed lexed code on immutable instance"
+        }
+        if "parsed" in self {
+            return self
+        }
+
+        let self.parsed = {
+            functions: {},
+            values: {}, // constants and variables
+        }
+
+        let context = null
+
+        for i in 0..self.lexed.length {
+            let line = self.lexed[i]
+            if line is @NULL { return @trasm::error_line(line, i, "Invalid line") }
+            if line.length == 0 { continue }
+
+            // insert here parsing logic
         }
     },
-    run_line: #[desc("Runs a line of code")] (line: [@string | @NULL], index: @number) {
-        // x
-        if line[0] == '.' {
-            if line.length == 1 {
-                if line == ".consts" {
-                    // s
-                } else if line == ".vars" {
-                    //e
-                } else {
-                    return @trasm::error_line(line, index, "you are mom this dumb error !! 1 unlegal")
-                }
-            } else {
-                return @trasm::error_line(line, index, "Xd lol error: u sttopipd no args here")
-            }
-        }
-    },
-    error_line: #[desc("Prints an error line")] (line: @string, index: @number, error: @string) {
+    error_line: #[desc("Prints an error line")] (line: @string, index: @number, error: @string) -> @NULL {
         $.print("{} | {}\nERROR: {}".fmt([index + 1, line, error]))
     },
 }

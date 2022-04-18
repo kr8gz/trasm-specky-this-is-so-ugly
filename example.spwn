@@ -47,5 +47,5 @@ output = @trasm::new(u'
     ; looks assembly enugh to me,
 ')
 
-$.print(output.parsed)
+$.print(output.lexed)
 output.run()
