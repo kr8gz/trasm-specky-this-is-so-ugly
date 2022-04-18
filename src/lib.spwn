@@ -3,6 +3,7 @@
 lexed_success_pattern = [@string]
 lexed_line_pattern = lexed_success_pattern|@NULL
 lexed_code_pattern = [lexed_line_pattern]
+typedefs = ["var", "str", "num", "ctr", "id", "gr", "col"]
 
 #[desc("TRigger ASseMbly compiler")]
 type @trasm
@@ -13,6 +14,7 @@ impl @trasm {
             code: code,
             lexed: @trasm::lex(code),
         }
+        trasm.parse()
         return trasm
     },
     lex: #[desc("Lexes the code")] (code: @string) -> lexed_code_pattern {
@@ -78,12 +80,12 @@ impl @trasm {
         future()
 
         if is_string != false {
-            return @trasm::error_line(line, index, "Unterminated string")
+            return @trasm::log(line, index, "ERROR", "Unterminated string")
         }
 
         return previous
     },
-    parse: #[desc("Parses the lexed code")] (self) -> @NULL {
+    parse: #[desc("Parses the lexed code")] (self) -> @trasm { // apparently it implicitly returns trasm
         if !$.mutability(self) {
             throw "Cannot save parsed lexed code on immutable instance"
         }
@@ -98,33 +100,72 @@ impl @trasm {
 
         let context = null
 
-        /*
         for i in 0..self.lexed.length {
             let line = self.lexed[i]
-            if line is @NULL { return @trasm::error_line(line, i, "Invalid line") }
             if line.length == 0 { continue }
 
-            if line[0] == "." {
+            if line[0] == '.' {
                 match line.length {
-                    ==1: @trasm::error_line(line, i, "Expected section name, got nothing"),
-                    >2: @trasm::warn_line(line, i, "Too many arguments"),
-                }
-                match line[1].lowercase() {
-                    =="c"|=="consts"|=="constants": (){
-                        context = 1
-                    }(),
-                    =="v"|=="vars"|=="variables": (){
-                        context = 2
+                    <2: @trasm::log(line, i, "ERROR", "Expected section name, got nothing"),
+                    >2: @trasm::log(line, i, "ERROR", "Too many arguments"),
+                    ==2: (){
+                        match line[1].lowercase() {
+                            =="c"|=="consts"|=="constants": (context = 1),
+                            =="v"|=="vars"|=="variables": (context = 2),
+                            else: @trasm::log(line, i, "ERROR", "Unknown section name"),
+                        }
                     }(),
                 }
             }
+
+            if line.length >= 2 && line[1] == ':' {
+                let name = line[0]
+                let args = []
+                if line.length > 2 {
+                    args += @trasm::parse_list(line[2:], self.code.split("\n")[i], i) if is @array else [null]
+                }
+
+            }
         }
-        */
     },
-    error_line: #[desc("Prints an error line")] (line: @string, index: @number, error: @string) -> @NULL {
-        $.print("{} | {}\nERROR: {}".fmt([index + 1, line, error]))
+    parse_list: #[desc("Parses a comma separated list")] (input: [@string], line: @string, index: @number) {
+        if input[0] == ',' {
+            return @trasm::log(line, index, "ERROR", "Expected space to separate operator from arguments, got comma")
+        }    
+
+        let i = 0
+        let arguments = []
+
+        while true {
+            if input[i] in typedefs {
+                if i + 1 >= input.length || input[i + 1] == ',' {
+                    return @trasm::log(line, index, "ERROR", "Expected value after type definition")
+                }
+                arguments.push({
+                    typ: input[i],
+                    val: input[i + 1],
+                })
+                i++
+            } else if input[i] != ',' {
+                arguments.push({
+                    typ: "var",
+                    val: input[i],
+                })
+                if i + 1 >= input.length || input[i + 1] == ',' {
+                    i++
+                } else {
+                    return @trasm::log(line, index, "ERROR", "Expected comma to separate arguments")
+                }
+            } else {
+                return @trasm::log(line, index, "ERROR", "Unexpected comma")
+            }
+            
+            i++
+            if i >= input.length { break }
+        }
+        return arguments
     },
-    warn_line: #[desc("Prints a warning line")] (line: @string, index: @number, warning: @string) -> @NULL {
-        $.print("{} | {}\nWARNING: {}".fmt([index + 1, line, warning]))
+    log: #[desc("logs something to console")] (line: @string, index: @number, typ: @string, message: @string) -> @NULL {
+        $.print("{} | {}\n{}: {}".fmt([index + 1, line, typ, message]))
     },
 }
