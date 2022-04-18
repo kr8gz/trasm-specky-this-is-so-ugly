@@ -1,6 +1,7 @@
 #[cache_output]
 
-lexed_line_pattern = [@string]|@NULL
+lexed_success_pattern = [@string]
+lexed_line_pattern = lexed_success_pattern|@NULL
 lexed_code_pattern = [lexed_line_pattern]
 
 #[desc("TRigger ASseMbly compiler")]
@@ -97,15 +98,33 @@ impl @trasm {
 
         let context = null
 
+        /*
         for i in 0..self.lexed.length {
             let line = self.lexed[i]
             if line is @NULL { return @trasm::error_line(line, i, "Invalid line") }
             if line.length == 0 { continue }
 
-            // insert here parsing logic
+            if line[0] == "." {
+                match line.length {
+                    ==1: @trasm::error_line(line, i, "Expected section name, got nothing"),
+                    >2: @trasm::warn_line(line, i, "Too many arguments"),
+                }
+                match line[1].lowercase() {
+                    =="c"|=="consts"|=="constants": (){
+                        context = 1
+                    }(),
+                    =="v"|=="vars"|=="variables": (){
+                        context = 2
+                    }(),
+                }
+            }
         }
+        */
     },
     error_line: #[desc("Prints an error line")] (line: @string, index: @number, error: @string) -> @NULL {
         $.print("{} | {}\nERROR: {}".fmt([index + 1, line, error]))
+    },
+    warn_line: #[desc("Prints a warning line")] (line: @string, index: @number, warning: @string) -> @NULL {
+        $.print("{} | {}\nWARNING: {}".fmt([index + 1, line, warning]))
     },
 }

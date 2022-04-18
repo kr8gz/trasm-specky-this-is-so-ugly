@@ -1,7 +1,7 @@
 import "./src"
 
 
-output = @trasm::new(u'
+let output = @trasm::new(u'
     ; this example is obviously subject to changes
 
     .consts
@@ -48,4 +48,5 @@ output = @trasm::new(u'
 ')
 
 $.print(output.lexed)
-output.run()
+output.parse()
+$.print(output.parsed)
