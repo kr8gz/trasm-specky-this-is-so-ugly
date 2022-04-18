@@ -19,11 +19,11 @@ output = @trasm::new(u'
         out     hello       ; $.print(hello)
         wait    2
 
-        call    func         ; call the func func
-        pop     conter       ; set conter to the thing from the stack and pop it or somethinf
+        call    func, hello, mogus  ; call the func macro with args
+
         add     conter, 1    ; add 1 to the conter id (for no reason, just like this enttire file)
-        call    thing        ; run the trigger function with group "thing" or something
-        spwn    thing        ; spawn the group/trigger function "thing"
+        call    thing        ; run the trigger function with group "thing" or something (makes it a macro)
+        spwn    thing        ; spawn the group/trigger function "thing" (its a macro so fail!!)
         *mov    6, 9, +42, 1 ; move gruop 6 (inferred type) x: 9 (absolute), y: 42 (relative) and 1 second but also * is the -> from spwn or something
         mov     5, -10, 10   ; move group 5 (inferred type) x: -10 (relative) and y: 10 (absolute)
 
@@ -37,9 +37,11 @@ output = @trasm::new(u'
     10:                     ; trigger funciton listening to group 10
         add     a, b        ; a += b
 
-    func:                   ; declare a function called "func"
+    func: x, d              ; macro with args
         out     hello    
-        push    conter      ; add conter to stack or treat it as a return value
+        out     x
+        out     d
+        ret     conter      ; return conter
 
     ; idk its just a bunch of made up shit annywayya7
     ; looks assembly enugh to me,

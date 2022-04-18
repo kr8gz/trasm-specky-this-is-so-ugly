@@ -69,9 +69,25 @@ impl @trasm {
 
         return previous
     },
-    run: #[desc("runs the code ig")] (self) {
-        for line in self.parsed {
-            $.print(line.join("xdlol"))
+    run: #[desc("Runs the code")] (self) {
+        for i in 0..self.parsed.length {
+            @trasm::parse_line(lines[i], i)
+        }
+    },
+    run_line: #[desc("Runs a line of code")] (line: [@string | @NULL], index: @number) {
+        // x
+        if line[0] == '.' {
+            if line.length == 1 {
+                if line == ".consts" {
+                    // s
+                } else if line == ".vars" {
+                    //e
+                } else {
+                    return @trasm::error_line(line, index, "you are mom this dumb error !! 1 unlegal")
+                }
+            } else {
+                return @trasm::error_line(line, index, "Xd lol error: u sttopipd no args here")
+            }
         }
     },
     error_line: #[desc("Prints an error line")] (line: @string, index: @number, error: @string) {
