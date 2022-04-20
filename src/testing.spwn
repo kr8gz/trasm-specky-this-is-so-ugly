@@ -128,7 +128,7 @@ impl @trasm {
             while true {
                 next()
 
-                if self.curr_char == null {
+                if self.curr_char == null || self.curr_char == ";" {
                     break
                 } else if self.curr_char in letters {
                     lex_word()
@@ -170,5 +170,9 @@ impl @trasm {
 @trasm::from_str("
 set a, 5
 .vars
-    thing num 0.55\"sdfsdfsdf\\\\\"
+    thing num 0.55
+   ;thinf nmyu 0.69
+    str sus \"sdfs\\td\\nfsdf\\\\\\\"\\'\"lsf;sdfs;f;
+    's;sdfsdfdfsdf\"'
+;xdlo
 ")
