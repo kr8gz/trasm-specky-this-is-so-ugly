@@ -1,0 +1,174 @@
+#[cache_output]
+
+letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+let exit = false
+
+#[desc("TrIGgER ASSembly")]
+type @trasm
+
+impl @trasm {
+    from_str: (code: @string) {
+        let trasm = @trasm::{
+            lines: code.split("\n"),
+            curr_line_index: 0,
+            curr_line: null,
+            curr_char_index: 0,
+            curr_char: null
+        }
+        
+        $.print(trasm.lex()) ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    },
+
+    from_file: (name: @string) {
+        return @trasm::from_str($.readfile(name))
+    },
+
+    lex: (self) {
+        let tokens = []
+
+        update_char = () {
+            if self.curr_char_index < self.curr_line.length {
+                self.curr_char = self.curr_line[self.curr_char_index]
+            } else {
+                self.curr_char = null
+            }
+        }
+
+        next = () {
+            ++self.curr_char_index
+            update_char()
+        }
+        prev = () {
+            --self.curr_char_index
+            update_char()
+        }
+
+        lex_word = () {
+            let word = self.curr_char
+            while true {
+                next()
+                if self.curr_char != null && (self.curr_char in letters || (!word.is_empty() && self.curr_char.is_digit())) {
+                    word += self.curr_char
+                } else {
+                    prev()
+                    return tokens.push({
+                        typ: "word",
+                        val: word,
+                        line: self.curr_line_index + 1
+                    })
+                }
+            }
+        }
+
+        lex_num = () {
+            let num = self.curr_char
+            let float = false
+
+            while true {
+                next()
+
+                if self.curr_char == "." {
+                    if float {
+                        return self.log(self.curr_line_index, "ERROR: more than one decimal point in number")
+                    } else {
+                        float = true
+                        num += self.curr_char
+                    }
+                } else if self.curr_char == null || !self.curr_char.is_digit() {
+                    prev()
+                    return tokens.push({
+                        typ: "num",
+                        val: @number(num),
+                        line: self.curr_line_index + 1
+                    })
+                } else {
+                    num += self.curr_char
+                }
+            }
+        }
+
+        lex_str = (quotes: @string) {
+            let str = ""
+            let escape = false
+
+            while true {
+                next()
+
+                if escape {
+                    match self.curr_char {
+                        == "n": (str += "\n"),
+                        == "t": (str += "\t"),
+                        == "\\": (str += "\\"),
+                        == "\'": (str += "\'"),
+                        == "\"": (str += "\"")
+                    }
+                    escape = false
+                } else if self.curr_char == "\\" {
+                    escape = true
+                } else if self.curr_char == quotes {
+                    return tokens.push({
+                        typ: "str",
+                        val: str,
+                        line: self.curr_line_index + 1
+                    })
+                } else if self.curr_char == null {
+                    return self.log(self.curr_line_index, "ERROR: unclosed string")
+                } else {
+                    str += self.curr_char
+                }
+            }
+        }
+
+        for i in 0..self.lines.length {
+            self.curr_line_index = i
+            self.curr_line = self.lines[i]
+            self.curr_char_index = -1
+            
+            while true {
+                next()
+
+                if self.curr_char == null {
+                    break
+                } else if self.curr_char in letters {
+                    lex_word()
+                } else if self.curr_char.is_digit() {
+                    lex_num()
+                } else if self.curr_char in "\"'" {
+                    lex_str(self.curr_char)
+                } else if !(self.curr_char in " \n\t") {
+                    tokens.push({
+                        typ: "sym",
+                        val: self.curr_char,
+                        line: self.curr_line_index + 1
+                    })
+                }
+
+                if exit {
+                    return
+                }
+            }
+        }
+
+        return tokens
+    },
+
+    parse: (self) {
+
+    },
+
+    run: (self) {
+
+    },
+
+    log: (self, index: @number, msg: @string) {
+        $.print("{} | {}\n{}".fmt([index + 1, self.lines[index], msg]))
+        exit = msg.starts_with("ERROR")
+    },
+}
+
+@trasm::from_str("
+set a, 5
+.vars
+    thing num 0.55\"sdfsdfsdf\\\\\"
+")
