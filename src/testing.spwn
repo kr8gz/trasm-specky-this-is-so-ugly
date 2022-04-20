@@ -28,19 +28,15 @@ impl @trasm {
         let tokens = []
 
         update_char = () {
-            if self.curr_char_index < self.curr_line.length {
-                self.curr_char = self.curr_line[self.curr_char_index]
-            } else {
-                self.curr_char = null
-            }
+            self.curr_char = self.curr_line[self.curr_char_index] if self.curr_char_index < self.curr_line.length else null
         }
 
         next = () {
-            ++self.curr_char_index
+            self.curr_char_index++
             update_char()
         }
         prev = () {
-            --self.curr_char_index
+            self.curr_char_index--
             update_char()
         }
 
@@ -96,12 +92,16 @@ impl @trasm {
                 next()
 
                 if escape {
-                    match self.curr_char {
-                        == "n": (str += "\n"),
-                        == "t": (str += "\t"),
-                        == "\\": (str += "\\"),
-                        == "\'": (str += "\'"),
-                        == "\"": (str += "\"")
+                    str += match self.curr_char {
+                        =="n": "\n",
+                        =="t": "\t",
+                        =="\\": "\\",
+                        =="'": "'",
+                        =='"': '"',
+                        else: (){
+                            self.log(self.curr_line_index, "ERROR: invalid escape sequence")
+                            return ""
+                        }(),
                     }
                     escape = false
                 } else if self.curr_char == "\\" {
@@ -128,15 +128,11 @@ impl @trasm {
             while true {
                 next()
 
-                if self.curr_char == null || self.curr_char == ";" {
-                    break
-                } else if self.curr_char in letters {
-                    lex_word()
-                } else if self.curr_char.is_digit() {
-                    lex_num()
-                } else if self.curr_char in "\"'" {
-                    lex_str(self.curr_char)
-                } else if !(self.curr_char in " \n\t") {
+                if self.curr_char == null || self.curr_char == ";" { break }
+                else if self.curr_char in letters { lex_word() }
+                else if self.curr_char.is_digit() { lex_num() }
+                else if self.curr_char in "\"'" { lex_str(self.curr_char) }
+                else if !(self.curr_char in " \t") {
                     tokens.push({
                         typ: "sym",
                         val: self.curr_char,
@@ -144,9 +140,7 @@ impl @trasm {
                     })
                 }
 
-                if exit {
-                    return
-                }
+                if exit { return }
             }
         }
 
@@ -163,7 +157,7 @@ impl @trasm {
 
     log: (self, index: @number, msg: @string) {
         $.print("{} | {}\n{}".fmt([index + 1, self.lines[index], msg]))
-        exit = msg.starts_with("ERROR")
+        if msg.starts_with("ERROR") { exit = true }
     },
 }
 
