@@ -2,6 +2,22 @@
 
 letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+operators = [
+    "set", "add", "sub", "mul", "div", "mod", "and", "or", "xor", "not",
+    "shl", "shr", "eq", "neq", "lt", "gt", "lte", "gte", "neg", "pos",
+    "call", "ret", "jmp", "jmpz", "jmpnz", "jmpn", "jmpnn", "jmpzn", "jmpznn", "jmpzn", "jmpznn",
+    "push", "pop", "dup", "swap", "drop", "over", "rot", "nip", "tuck", "pick", "roll", "rolld",
+    // thanks copilot
+]
+variable_tokens = ["variables", "variable", "vars", "var", "v"]
+constant_tokens = ["constants", "constant", "consts", "const", "c"]
+types = [
+    "num", "str", "bool", // compile-time
+    "gr", "id", "ctr",
+]
+
+keywords = operators + variable_tokens + constant_tokens + types
+
 let exit = false
 
 #[desc("TrIGgER ASSembly")]
@@ -14,10 +30,14 @@ impl @trasm {
             curr_line_index: 0,
             curr_line: null,
             curr_char_index: 0,
-            curr_char: null
+            curr_char: null,
+            variables: {},
+            constants: {},
         }
-        
-        $.print(trasm.lex()) ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        let trasm.lexed = trasm.lex()
+        $.print(trasm.lexed)
+        let trasm.parsed = trasm.parse()
+        $.print(trasm.parsed)
     },
 
     from_file: (name: @string) {
@@ -148,7 +168,121 @@ impl @trasm {
     },
 
     parse: (self) {
+        let lines = []
 
+        for i in 0..self.lexed.length {
+            while self.lexed[i].line > lines.length { lines.push([]) }
+            lines[self.lexed[i].line - 1].push(self.lexed[i])
+        }
+
+        is_define_section = (line: @array) {
+            if line.length != 2 { return false }
+            if line[0].typ != "sym" { return false }
+            if line[0].val != "." { return false }
+            if line[1].typ != "word" { return false }
+            return (line[1].val in constant_tokens) || (line[1].val in variable_tokens)
+        }
+        parse_define_section = (line: @array) -> @string {
+            if !is_define_section(line) {
+                return self.log(line[0].line, "ERROR: invalid define section")
+            }
+            return match line[1].val {
+                in constant_tokens: "const",
+                in variable_tokens: "var",
+                else: (){
+                    self.log(line[0].line, "ERROR: hwo tf did this happen")
+                    return ""
+                }(),
+            }
+        }
+        is_function_section = (line: @array) {
+            if line.length != 2 { return false }
+            if line[0].typ != "word" { return false }
+            if line[0].val in keywords { return false }
+            if line[1].typ != "sym" { return false }
+            if line[1].val != ":" { return false }
+            return true
+        }
+        parse_function_section = (line: @array) -> @string {
+            if !is_function_section(line) {
+                return self.log(line[0].line, "ERROR: invalid function section")
+            }
+            return line[0].val
+        }
+
+        parse_definition = (line: @array) {
+            
+        }
+
+        parse_operation = (line: @array) {
+            let operation = {
+                typ: "operation",
+                line: line[0].line,
+                operator: line[0].val,
+                arguments: [],
+            }
+            if line[0].typ != "word" {
+                return self.log(line[0].line, "ERROR: expected operation name")
+            }
+            if !(line[0].typ in operators) {
+                return self.log(line[0].line, "ERROR: expected valid operator")
+            }
+            if line.length >= 2 {
+                operation.arguments = parse_arguments(line[1:])
+            }
+
+            return operation
+        }
+
+        parse_arguments = (arguments: @array) {
+            for i in 0..arguments.length {
+                if arguments[i].typ != "word" {
+                    return self.log(arguments[i].line, "ERROR: expected argument name")
+                } else if arguments[i].val in keywords {
+                    return self.log(arguments[i].line, "ERROR: argument name should not be a keyword")
+                }
+            }
+        }
+
+        parse_value = (value: @array) {
+
+        }
+
+        let context = {
+            typ: null,
+            kind: null,
+        }
+
+        for i in 0..lines.length {
+            if is_define_section(lines[i]) {
+                context.typ = "define"
+                context.kind = parse_define_section(lines[i])
+                continue
+            }
+            if is_function_section(lines[i]) {
+                context.typ = "function"
+                context.kind = parse_function_section(lines[i])
+                continue
+            }
+            match context.typ {
+                =="define": () {
+                    let content = parse_definition(lines[i])
+                    match context.kind {
+                        =="const": (){
+                        }(),
+                        =="var": (){
+                        }(),
+                    }
+                },
+                =="function": () {
+                    let content = parse_operation(lines[i])
+                },
+                else: () {
+                    self.log(lines[i][0].line, "ERROR: expected a define or function section")
+                }
+            }
+            if exit { return }
+        }
     },
 
     run: (self) {
@@ -161,12 +295,12 @@ impl @trasm {
     },
 }
 
-@trasm::from_str("
-set a, 5
-.vars
-    thing num 0.55
-   ;thinf nmyu 0.69
-    str sus \"sdfs\\td\\nfsdf\\\\\\\"\\'\"lsf;sdfs;f;
-    's;sdfsdfdfsdf\"'
-;xdlo
-")
+@trasm::from_str(u'
+    set a, 5
+    .vars
+        thing num 0.55
+    ;thinf nmyu 0.69
+        str sus "amogus \\n "
+    ;xdlo
+')
+
