@@ -284,13 +284,13 @@ impl @trasm {
     log: (self, context: @dictionary | @number, msg: @string) {
         [ line_index, char_index ] = match context {
             @number: [ context, 0 ],
-            @dictionary: [ context.line, context.char ],
+            @dictionary: [ context.line, context.col ],
         }
 
-        line_context = "{} | ".fmt(line_index)
+        line_context = "{} | ".fmt(line_index + 1)
         
-        $.print("{}{}".fmt([index + 1, self.lines[index]]))
-        $.print("{}{}".fmt([" " * (line_context.length + char_index), msg]))
+        $.print("{}{}".fmt([line_context, self.lines[line_index]]))
+        $.print("{}{}".fmt([" " * line_context.length, msg]))
 
         if msg.starts_with("ERROR") { self.error = true }
     },
