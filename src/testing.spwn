@@ -27,10 +27,6 @@ impl @trasm {
     from_str: (code: @string) {
         let trasm = @trasm::{
             lines: code.split("\n"),
-            curr_line_index: 0,
-            curr_line: null,
-            curr_char_index: 0,
-            curr_char: null,
             variables: {},
             constants: {},
         }
@@ -46,60 +42,65 @@ impl @trasm {
 
     lex: (self) {
         let tokens = []
+        let curr_line_index = 0
+        let curr_line = null
+        let curr_char_index = 0
+        let curr_char = null
+
+        push_token = (typ: @string, val) {
+            return tokens.push({
+                typ: typ,
+                val: val,
+                line: curr_line_index,
+                col: curr_char_index,
+            })
+        }
 
         update_char = () {
-            self.curr_char = self.curr_line[self.curr_char_index] if self.curr_char_index < self.curr_line.length else null
+            curr_char = curr_line[curr_char_index] if curr_char_index < curr_line.length else null
         }
 
         next = () {
-            self.curr_char_index++
+            curr_char_index++
             update_char()
         }
         prev = () {
-            self.curr_char_index--
+            curr_char_index--
             update_char()
         }
 
         lex_word = () {
-            let word = self.curr_char
+            let word = curr_char
             while true {
                 next()
-                if self.curr_char != null && (self.curr_char in letters || (!word.is_empty() && self.curr_char.is_digit())) {
-                    word += self.curr_char
+                if curr_char != null && (curr_char in letters || (!word.is_empty() && curr_char.is_digit())) {
+                    word += curr_char
                 } else {
                     prev()
-                    return tokens.push({
-                        typ: "word",
-                        val: word,
-                        line: self.curr_line_index + 1
-                    })
+                    return push_token("word", word)
                 }
             }
         }
 
         lex_num = () {
-            let num = self.curr_char
+            let num = curr_char
             let float = false
 
             while true {
                 next()
 
-                if self.curr_char == "." {
+                if curr_char == "." {
                     if float {
-                        return self.log(self.curr_line_index, "ERROR: more than one decimal point in number")
+                        return self.log(curr_line_index, "ERROR: more than one decimal point in number")
                     } else {
                         float = true
-                        num += self.curr_char
+                        num += curr_char
                     }
-                } else if self.curr_char == null || !self.curr_char.is_digit() {
+                } else if curr_char == null || !curr_char.is_digit() {
                     prev()
-                    return tokens.push({
-                        typ: "num",
-                        val: @number(num),
-                        line: self.curr_line_index + 1
-                    })
+                    return push_token("num", num as @number)
                 } else {
-                    num += self.curr_char
+                    num += curr_char
                 }
             }
         }
@@ -112,52 +113,44 @@ impl @trasm {
                 next()
 
                 if escape {
-                    str += match self.curr_char {
+                    str += match curr_char {
                         =="n": "\n",
                         =="t": "\t",
                         =="\\": "\\",
                         =="'": "'",
                         =='"': '"',
                         else: (){
-                            self.log(self.curr_line_index, "ERROR: invalid escape sequence")
+                            self.log(curr_line_index, "ERROR: invalid escape sequence")
                             return ""
                         }(),
                     }
                     escape = false
-                } else if self.curr_char == "\\" {
+                } else if curr_char == "\\" {
                     escape = true
-                } else if self.curr_char == quotes {
-                    return tokens.push({
-                        typ: "str",
-                        val: str,
-                        line: self.curr_line_index + 1
-                    })
-                } else if self.curr_char == null {
-                    return self.log(self.curr_line_index, "ERROR: unclosed string")
+                } else if curr_char == quotes {
+                    return push_token("str", str)
+                } else if curr_char == null {
+                    return self.log(curr_line_index, "ERROR: unclosed string")
                 } else {
-                    str += self.curr_char
+                    str += curr_char
                 }
             }
         }
 
         for i in 0..self.lines.length {
-            self.curr_line_index = i
-            self.curr_line = self.lines[i]
-            self.curr_char_index = -1
+            curr_line_index = i
+            curr_line = self.lines[i]
+            curr_char_index = -1
             
             while true {
                 next()
 
-                if self.curr_char == null || self.curr_char == ";" { break }
-                else if self.curr_char in letters { lex_word() }
-                else if self.curr_char.is_digit() { lex_num() }
-                else if self.curr_char in "\"'" { lex_str(self.curr_char) }
-                else if !(self.curr_char in " \t") {
-                    tokens.push({
-                        typ: "sym",
-                        val: self.curr_char,
-                        line: self.curr_line_index + 1
-                    })
+                if curr_char == null || curr_char == ";" { break }
+                else if curr_char in letters { lex_word() }
+                else if curr_char.is_digit() { lex_num() }
+                else if curr_char in "\"'" { lex_str(curr_char) }
+                else if !(curr_char in " \t") {
+                    push_token("sym", curr_char)
                 }
 
                 if exit { return }
@@ -171,8 +164,8 @@ impl @trasm {
         let lines = []
 
         for i in 0..self.lexed.length {
-            while self.lexed[i].line > lines.length { lines.push([]) }
-            lines[self.lexed[i].line - 1].push(self.lexed[i])
+            while self.lexed[i].line >= lines.length { lines.push([]) }
+            lines[self.lexed[i].line].push(self.lexed[i])
         }
 
         is_define_section = (line: @array) {
