@@ -18,8 +18,6 @@ types = [
 
 keywords = operators + variable_tokens + constant_tokens + types
 
-let exit = false
-
 #[desc("TrIGgER ASSembly")]
 type @trasm
 
@@ -27,6 +25,7 @@ impl @trasm {
     from_str: (code: @string) {
         let trasm = @trasm::{
             lines: code.split("\n"),
+            error: false,
             variables: {},
             constants: {},
         }
@@ -153,7 +152,7 @@ impl @trasm {
                     push_token("sym", curr_char)
                 }
 
-                if exit { return }
+                if self.error { return }
             }
         }
 
@@ -177,13 +176,13 @@ impl @trasm {
         }
         parse_define_section = (line: @array) -> @string {
             if !is_define_section(line) {
-                return self.log(line[0].line, "ERROR: invalid define section")
+                return self.log(line[0], "ERROR: invalid define section")
             }
             return match line[1].val {
                 in constant_tokens: "const",
                 in variable_tokens: "var",
                 else: (){
-                    self.log(line[0].line, "ERROR: hwo tf did this happen")
+                    self.log(line[0], "ERROR: hwo tf did this happen")
                     return ""
                 }(),
             }
@@ -198,7 +197,7 @@ impl @trasm {
         }
         parse_function_section = (line: @array) -> @string {
             if !is_function_section(line) {
-                return self.log(line[0].line, "ERROR: invalid function section")
+                return self.log(line[0], "ERROR: invalid function section")
             }
             return line[0].val
         }
@@ -215,10 +214,10 @@ impl @trasm {
                 arguments: [],
             }
             if line[0].typ != "word" {
-                return self.log(line[0].line, "ERROR: expected operation name")
+                return self.log(line[0], "ERROR: expected operation name")
             }
             if !(line[0].typ in operators) {
-                return self.log(line[0].line, "ERROR: expected valid operator")
+                return self.log(line[0], "ERROR: expected valid operator")
             }
             if line.length >= 2 {
                 operation.arguments = parse_arguments(line[1:])
@@ -230,9 +229,9 @@ impl @trasm {
         parse_arguments = (arguments: @array) {
             for i in 0..arguments.length {
                 if arguments[i].typ != "word" {
-                    return self.log(arguments[i].line, "ERROR: expected argument name")
+                    return self.log(arguments[i], "ERROR: expected argument name")
                 } else if arguments[i].val in keywords {
-                    return self.log(arguments[i].line, "ERROR: argument name should not be a keyword")
+                    return self.log(arguments[i], "ERROR: argument name should not be a keyword")
                 }
             }
         }
@@ -271,10 +270,10 @@ impl @trasm {
                     let content = parse_operation(lines[i])
                 },
                 else: () {
-                    self.log(lines[i][0].line, "ERROR: expected a define or function section")
+                    self.log(lines[i][0], "ERROR: expected a define or function section")
                 }
             }
-            if exit { return }
+            if self.error { return }
         }
     },
 
@@ -282,9 +281,18 @@ impl @trasm {
 
     },
 
-    log: (self, index: @number, msg: @string) {
-        $.print("{} | {}\n{}".fmt([index + 1, self.lines[index], msg]))
-        if msg.starts_with("ERROR") { exit = true }
+    log: (self, context: @dictionary | @number, msg: @string) {
+        [ line_index, char_index ] = match context {
+            @number: [ context, 0 ],
+            @dictionary: [ context.line, context.char ],
+        }
+
+        line_context = "{} | ".fmt(line_index)
+        
+        $.print("{}{}".fmt([index + 1, self.lines[index]]))
+        $.print("{}{}".fmt([" " * (line_context.length + char_index), msg]))
+
+        if msg.starts_with("ERROR") { self.error = true }
     },
 }
 
