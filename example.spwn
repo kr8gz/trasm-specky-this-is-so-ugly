@@ -1,52 +1,60 @@
 import "./src"
 
+simple_test = true
 
-let output = @trasm::new(u'
-    ; this example is obviously subject to changes
+if simple_test {
+    @trasm::from_str(u'
+        set a, 5
+        .vars
+            thing num 0.55
+        ;thinf nmyu 0.69
+            str sus "amogus \\n "
+        ;xdlo
+    ')
+} else {
+    @trasm::from_str(u'
+        ; this example is obviously subject to changes
 
-    .consts
-        hello   str "Hello world"    ; declare string
-        thing   gr  3                ; group 3
-        conter  id  ?                ; next free id
-        mogus   str \'sus\'
+        .consts
+            hello   str "Hello world"    ; declare string
+            thing   gr  3                ; group 3
+            conter  id  ?                ; next free id
+            mogus   str \'sus\'
 
-    .vars
-        a   ctr 10
-        b   ctr 20
-        sussy str \'amog us\'
+        .vars
+            a   ctr 10
+            b   ctr 20
+            sussy str \'amog us\'
 
-    start:                  ; synonym for "0:"
-        out     hello       ; $.print(hello)
-        wait    2
+        start:                  ; synonym for "0:"
+            out     hello       ; $.print(hello)
+            wait    2
 
-        call    func, hello, mogus  ; call the func macro with args
+            call    func, hello, mogus  ; call the func macro with args
 
-        add     conter, 1    ; add 1 to the conter id (for no reason, just like this enttire file)
-        call    thing        ; run the trigger function with group "thing" or something (makes it a macro)
-        spwn    thing        ; spawn the group/trigger function "thing" (its a macro so fail!!)
-        *mov    6, 9, +42, 1 ; move gruop 6 (inferred type) x: 9 (absolute), y: 42 (relative) and 1 second but also * is the -> from spwn or something
-        mov     5, -10, 10   ; move group 5 (inferred type) x: -10 (relative) and y: 10 (absolute)
+            add     conter, 1    ; add 1 to the conter id (for no reason, just like this enttire file)
+            call    thing        ; run the trigger function with group "thing" or something (makes it a macro)
+            spwn    thing        ; spawn the group/trigger function "thing" (its a macro so fail!!)
+            *mov    6, 9, +42, 1 ; move gruop 6 (inferred type) x: 9 (absolute), y: 42 (relative) and 1 second but also * is the -> from spwn or something
+            mov     5, -10, 10   ; move group 5 (inferred type) x: -10 (relative) and y: 10 (absolute)
 
-    thing:                  ; thing = !{ // trigger function
-        def     c, ctr 0    ; defines local coutner variable (c = counter(0))
-        add     c, a        ; c += a
-        add     c, b        ; c += b
-        div     c, a        ; c /= a
-        set     a, c        ; a = c
+        thing:                  ; thing = !{ // trigger function
+            def     c, ctr 0    ; defines local coutner variable (c = counter(0))
+            add     c, a        ; c += a
+            add     c, b        ; c += b
+            div     c, a        ; c /= a
+            set     a, c        ; a = c
 
-    10:                     ; trigger funciton listening to group 10
-        add     a, b        ; a += b
+        10:                     ; trigger funciton listening to group 10
+            add     a, b        ; a += b
 
-    func: x, d              ; macro with args
-        out     hello    
-        out     x
-        out     d
-        ret     conter      ; return conter
+        func: x, d              ; macro with args
+            out     hello    
+            out     x
+            out     d
+            ret     conter      ; return conter
 
-    ; idk its just a bunch of made up shit annywayya7
-    ; looks assembly enugh to me,
-')
-
-$.print(output.lexed)
-output.parse()
-$.print(output.parsed)
+        ; idk its just a bunch of made up shit annywayya7
+        ; looks assembly enugh to me,
+    ')
+}
