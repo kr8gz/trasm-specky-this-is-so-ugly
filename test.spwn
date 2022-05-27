@@ -1,3 +1,4 @@
+/* idk, this is not possible atm
 import "./src"
 
 // normal stuff
@@ -14,3 +15,4 @@ $.assert(@trasm::new("hello guys ; this is a comment").lexed == [["hello", "guys
 $.assert(@trasm::new("sussy 'uncompleted string").lexed == [null])
 
 $.print("\n\n\nseems good 😎")
+*/
