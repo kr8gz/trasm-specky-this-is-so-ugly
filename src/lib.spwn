@@ -295,13 +295,3 @@ impl @trasm {
         if msg.starts_with("ERROR") { self.error = true }
     },
 }
-
-@trasm::from_str(u'
-    set a, 5
-    .vars
-        thing num 0.55
-    ;thinf nmyu 0.69
-        str sus "amogus \\n "
-    ;xdlo
-')
-
