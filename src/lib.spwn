@@ -6,21 +6,27 @@ operators = [
     "out", "wait", "call", "add", "spwn", "mov", "def", "div", "set", "sub", "mul", "pow"
     // copilot stupid
 ]
-variable_tokens = ["variables", "variable", "vars", "var", "v"]
-constant_tokens = ["constants", "constant", "consts", "const", "c"]
-types = [
-    "num", "str", "bool", // compile-time
-    "gr", "id", "ctr",
-]
 
-keywords = operators + variable_tokens + constant_tokens + types
+define_section_tokens = ["vars", "consts"]
+
+keywords = operators + define_section_tokens
 
 type @token
 
 impl @token {
     matches: (self, typ: @string, val = @NULL) -> @bool {
-        return self.typ == typ && ((val is @array && self.val in val) || self.val == val || val == @NULL)
+        return (
+            self.typ == typ && (
+                (val is @array && self.val in val)
+                || self.val == val
+                || val == @NULL
+            )
+        )
     },
+
+    is_kw: (self) -> @bool {
+        return self.matches("word", keywords)
+    }
 }
 
 #[desc("TrIGgER ASSembly")]
@@ -166,68 +172,94 @@ impl @trasm {
     },
 
     parse: (self) {
+        // organize the tokens into an array of lines
         let lines = []
+        let lineno = -1
 
         for token in self.lexed {
-            while token.line >= lines.length { lines.push([]) }
-            lines[token.line].push(token)
+            if token.line > lineno { lines.push([]) }
+            lineno = token.line
+            lines[-1].push(token)
         }
 
+        // parser checks
         is_define_section = (line: @array) -> @bool {
             return (
                 line.length == 2 
                 && line[0].matches("sym", ".")
-                && line[1].matches("word", constant_tokens + variable_tokens)
+                && line[1].matches("word", define_section_tokens)
             )
         }
 
-        parse_define_section = (line: @array) -> @string {
-            return match line[1].val {
-                in constant_tokens: "const",
-                in variable_tokens: "var",
+        is_function_section = (line: @array) -> @bool {
+            return (
+                line.length == 2
+                && line[0].matches("word") && !line[0].is_kw()
+                && line[1].matches("sym", ":")
+            )
+        }
+
+        // specific parsing functions
+        parse_definition = (line: @array, kind: @string) -> @dictionary {
+            thing = match kind {
+                == "consts": "constant",
+                == "vars": "variable",
+            }
+
+            if line.length != 2 { // how are we gonna add arrays to tiger ass
+                return self.log(line[0], "ERROR: invalid {} definition".fmt(thing))
+            }
+
+            if line[0].is_kw() {
+                return self.log(line[0], "ERROR: unexpected keyword")
+            }
+
+            if !line[0].matches("word") {
+                return self.log(line[0], "ERROR: expected {} name".fmt(thing))
+            }
+
+            return {
+                typ: thing,
+                name: line[0].val,
+                value: line[1].val,
             }
         }
 
-        // TODO unfuck these
+        parse_operation = (line: @array) {
+            // let operation = {
+            //     typ: "operation",
+            //     line: line[0].line,
+            //     operator: line[0].val,
+            //     arguments: [],
+            // }
+            // if line[0].typ != "word" {
+            //     return self.log(line[0], "ERROR: expected operation name")
+            // }
+            // if !(line[0].typ in operators) {
+            //     return self.log(line[0], "ERROR: expected valid operator")
+            // }
+            // if line.length >= 2 {
+            //     operation.arguments = parse_arguments(line[1:])
+            // }
 
-        // parse_definition = (line: @array) {
-            
-        // }
+            // return operation
+        }
 
-        // parse_operation = (line: @array) {
-        //     let operation = {
-        //         typ: "operation",
-        //         line: line[0].line,
-        //         operator: line[0].val,
-        //         arguments: [],
-        //     }
-        //     if line[0].typ != "word" {
-        //         return self.log(line[0], "ERROR: expected operation name")
-        //     }
-        //     if !(line[0].typ in operators) {
-        //         return self.log(line[0], "ERROR: expected valid operator")
-        //     }
-        //     if line.length >= 2 {
-        //         operation.arguments = parse_arguments(line[1:])
-        //     }
+        parse_arguments = (arguments: @array) {
+            // for i in 0..arguments.length {
+            //     if arguments[i].typ != "word" {
+            //         return self.log(arguments[i], "ERROR: expected argument name")
+            //     } else if arguments[i].val in keywords {
+            //         return self.log(arguments[i], "ERROR: argument name should not be a keyword")
+            //     }
+            // }
+        }
 
-        //     return operation
-        // }
+        parse_value = (value: @array) {
 
-        // parse_arguments = (arguments: @array) {
-        //     for i in 0..arguments.length {
-        //         if arguments[i].typ != "word" {
-        //             return self.log(arguments[i], "ERROR: expected argument name")
-        //         } else if arguments[i].val in keywords {
-        //             return self.log(arguments[i], "ERROR: argument name should not be a keyword")
-        //         }
-        //     }
-        // }
+        }
 
-        // parse_value = (value: @array) {
-
-        // }
-
+        // initializing stuff
         let context = {
             typ: null,
             kind: null, // basically sub-type
@@ -242,19 +274,19 @@ impl @trasm {
             // check for new context
             if is_define_section(line) {
                 context.typ = "define"
-                context.kind = parse_define_section(line)
+                context.kind = line[1].val
                 continue
             }
 
             if is_function_section(line) {
                 context.typ = "function"
-                context.kind = parse_function_section(line)
+                context.kind = line[0].val
                 continue
             }
 
             // parse statements
             if context.typ == "define" {
-                statements.definitions.push(parse_definition(line))
+                statements.definitions.push(parse_definition(line, context.kind))
             }
 
             else if context.typ == "function" {
@@ -267,23 +299,33 @@ impl @trasm {
 
             if self.error { return }
         }
+
+        return statements
     },
 
     run: (self) {
 
     },
 
-    log: (self, context: @dictionary | @number, msg: @string) {
-        [ line_index, char_index ] = match context {
-            @number: [ context, 0 ],
-            @dictionary: [ context.line, context.col ],
+    log: (self, context: @token | @number, msg: @string) {
+        [ line_index, col_start, col_end ] = match context {
+            @number: [ context, null, null ],
+            @token: [ context.line, context.col_start, context.col_end + 1 ],
         }
 
         line_context = "{} | ".fmt(line_index + 1)
-        
-        $.print("{}{}".fmt([line_context, self.lines[line_index]]))
-        $.print("{}{}".fmt([" " * line_context.length, msg]))
 
-        if msg.starts_with("ERROR") { self.error = true }
+        if msg.starts_with("ERROR") {
+            self.error = true
+            $.print("[0;31m", line_context, self.lines[line_index])
+        } else {
+            $.print(line_context, self.lines[line_index])
+        }
+
+        if col_start != null && col_end != null {
+            $.print(" " * (line_context.length + col_start), "^" * (col_end - col_start))
+        }
+
+        $.print(msg, "\n")
     },
 }
