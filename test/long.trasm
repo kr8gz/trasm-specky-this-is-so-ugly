@@ -1,0 +1,58 @@
+; this example is obviously subject to changes
+
+.consts
+    hello   "Hello world"    ; declare string
+    thing   group 3          ; group 3
+    conter  item ?           ; next free id
+    mogus   'sus'
+
+.vars
+    ; a   ctr 10
+    ; b   ctr 20
+    sussy 'amog us'
+
+start:                  ; synonym for "0:"
+    out     hello       ; $.print(hello)
+    wait    2           ; wait(2)
+
+    call    func, hello, mogus  ; call the func macro with args
+    set     the, ret     ; "ret" is a reserved keyword to get the return value (if any)
+
+    add     conter, 1    ; add 1 to the conter id (for no reason, just like this enttire file)
+    call    thing        ; run the trigger function with group "thing" or something (makes it a macro)
+    spwn    thing        ; spawn the group/trigger function "thing" (its a macro so fail!!)
+    ; *mov    6, 9, +42, 1 ; move gruop 6 (inferred type) x: 9 (absolute), y: 42 (relative) and 1 second but also * is the -> from spwn or something
+    mov     5, -10, 10   ; move group 5 (inferred type) x: -10 (relative) and y: 10 (absolute)
+
+thing:                  ; thing = !{ // trigger function
+    def     c, ctr 0    ; defines local coutner variable (c = counter(0))
+    add     c, a        ; c += a
+    add     c, b        ; c += b
+    div     c, a        ; c /= a
+    set     a, c        ; a = c
+
+; 10:                   ; trigger funciton listening to group 10
+    cmp     a, b        ; new comparison
+    eq      A           ; these operations use the last cmp that happened ; if a == b go to section A
+    lt      B           ; if a < b go to section B
+    add     a, b        ; a += b
+    goto    C           ; skip past A and B since those should only trigger on the specific comparison outcomes
+
+    A >
+    out     "equal"
+    goto    C           ; if you dont put this, you will also execute the B section
+
+    B >
+    out     "less"
+    
+    C >
+    add a, b            ; a += b
+
+func: x, d              ; macro with args
+    out     hello       ; out function prints the value
+    out     x
+    out     d
+    ret     conter      ; return conter
+
+; idk its just a bunch of made up shit annywayya7
+; looks assembly enugh to me,

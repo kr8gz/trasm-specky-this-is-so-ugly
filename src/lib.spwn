@@ -16,13 +16,19 @@ impl @trasm {
         let trasm = @trasm::{
             lines: code.split("\n"),
             error: false,
+            lexed: [],
+            parsed: [],
             variables: {},
             constants: {},
         }
-        let trasm.lexed = trasm.lex()
-        $.print(trasm.lexed)
-        let trasm.parsed = trasm.parse()
-        $.print(trasm.parsed)
+
+        trasm.lexed = trasm.lex()
+        if trasm.error { return trasm }
+        trasm.parsed = trasm.parse()
+        if trasm.error { return trasm }
+        // trasm.run() and shit in case
+
+        return trasm
     },
 
     from_file: (name: @string) {

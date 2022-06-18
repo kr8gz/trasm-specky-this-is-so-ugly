@@ -1,5 +1,8 @@
 #[cache_output]
 
+color_reset = "\u{1B}[0m"
+color = (color) => "\u{1B}[38;5;{}m".fmt(color) 
+
 impl @trasm {
     log: (self, context: @token | @number, msg: @string) {
         [ line_index, col_start, col_end ] = match context {
@@ -11,7 +14,7 @@ impl @trasm {
 
         if msg.starts_with("ERROR") {
             self.error = true
-            $.print("\u{1B}[0;31m", line_context, self.lines[line_index])
+            $.print(color(196), line_context, self.lines[line_index])
         } else {
             $.print(line_context, self.lines[line_index])
         }
@@ -20,6 +23,11 @@ impl @trasm {
             $.print(" " * (line_context.length + col_start), "^" * (col_end - col_start))
         }
 
-        $.print(msg, "\u{1B}[0;0m\n") // clear color
+        $.print(msg, color_reset) // clear color
     },
+}
+
+return {
+    color: color,
+    color_reset: color_reset,
 }
