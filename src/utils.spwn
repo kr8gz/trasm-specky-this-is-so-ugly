@@ -1,5 +1,4 @@
 #[cache_output]
-// rename to `utils.spwn` when it gets fixed
 
 impl @trasm {
     log: (self, context: @token | @number, msg: @string) {

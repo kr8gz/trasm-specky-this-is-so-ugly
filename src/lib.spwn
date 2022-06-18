@@ -9,7 +9,7 @@ type @trasm
 // @trasm extensions
 import "lexer.spwn"
 import "parser.spwn"
-import "utilsa.spwn"
+import "utils.spwn"
 
 impl @trasm {
     from_str: (code: @string) {
