@@ -2,15 +2,20 @@
 
 letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-const_define_section_tokens = ["c","const","consts","constant","constants"]
-var_define_section_tokens = ["v","var","vars","variable","variables"]
+not_inferable_types = ["group", "ctr", "col", "item"]
+const_define_section_tokens = ["c", "const", "consts", "constant", "constants"]
+var_define_section_tokens = ["v", "var", "vars", "variable", "variables"]
 
 type @token
 
 impl @token {
-    matches: (self, typ: @string, val = @NULL) -> @bool {
+    matches: (self, typ: @string | @array, val = @NULL) -> @bool {
         return (
-            self.typ == typ && (
+            (
+                (typ is @array && self.typ in typ)
+                || self.typ == typ
+            )
+            && (
                 (val is @array && self.val in val)
                 || self.val == val
                 || val == @NULL
@@ -173,30 +178,71 @@ impl @trasm {
         }
 
         // parser checks
-        is_define_section = (line: @array) -> @bool {
-            return (
+        get_define_section = (line: @array) -> @string | @NULL {
+            return line[1].val if
+            
                 line.length == 2 
                 && line[0].matches("sym", ".")
                 && line[1].matches("word", const_define_section_tokens + var_define_section_tokens)
-            )
+                
+            else null
         }
 
-        is_function_section = (line: @array) -> @bool {
-            return (
+        get_function_section = (line: @array) -> @string | @NULL {
+            return line[0].val if
+
+                line.length == 2
+                && line[0].matches(["word", "number"])
+                && line[1].matches("sym", ":")
+
+            else null
+        }
+
+        get_label = (line: @array) -> @string | @NULL {
+            line[0].val if
+
                 line.length == 2
                 && line[0].matches("word")
-                && line[1].matches("sym", ":")
-            )
+                && line[1].matches("sym", ">")
+
+            else null
         }
 
         // specific parsing functions
+        parse_value = (value: @array) {
+            if value.length < 1 {
+                return null
+            }
+
+            if value[0].matches("word", not_inferable_types) && value[1].matches("number") {
+                match value[0].val {
+                    == "group": @group(value[1].val),
+                    // idk or with a dictionarh with type and value
+                    // and also check iof length is 2 or something
+                    // and error
+                    // and mm
+                    // and how array
+                    // mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+
+                }
+            }
+            // sdfdjfsdjfsdkjfsdkjfkjsdf
+            // help me
+
+
+        }
+
+        parse_arguments = (arguments: @array) -> @array | @NULL {
+            return []
+        }
+
         parse_definition = (line: @array, kind: @string) -> @dictionary | @NULL {
             thing = match kind {
                 in const_define_section_tokens: "constant",
                 in var_define_section_tokens: "variable",
             }
 
-            if line.length != 2 { // how are we gonna add arrays to tiger ass
+            if line.length < 2 {
                 return self.log(line[0], "ERROR: invalid {} definition".fmt(thing))
             }
 
@@ -207,76 +253,67 @@ impl @trasm {
             return {
                 typ: thing,
                 name: line[0].val,
-                value: line[1].val,
+                value: parse_value(line[1:]),
             }
         }
 
-        parse_operation = (line: @array) {
-            // let operation = {
-            //     typ: "operation",
-            //     line: line[0].line,
-            //     operator: line[0].val,
-            //     arguments: [],
-            // }
-            // if line[0].typ != "word" {
-            //     return self.log(line[0], "ERROR: expected operation name")
-            // }
-            // if !(line[0].typ in operators) {
-            //     return self.log(line[0], "ERROR: expected valid operator")
-            // }
-            // if line.length >= 2 {
-            //     operation.arguments = parse_arguments(line[1:])
-            // }
+        parse_operation = (line: @array) -> @dictionary | @NULL {
+            if line.length < 2 {
+                return self.log(line[0], "ERROR: invalid statement")
+            }
 
-            // return operation
-        }
+            if !line[0].matches("word") {
+                return self.log(line[0], "ERROR: expected operation name")
+            }
 
-        parse_arguments = (arguments: @array) {
-            // for i in 0..arguments.length {
-            //     if arguments[i].typ != "word" {
-            //         return self.log(arguments[i], "ERROR: expected argument name")
-            //     } else if arguments[i].val in keywords {
-            //         return self.log(arguments[i], "ERROR: argument name should not be a keyword")
-            //     }
-            // }
-        }
-
-        parse_value = (value: @array) {
-
+            return {
+                typ: "operation",
+                name: line[0].val,
+                args: parse_arguments(line[1:]),
+            }
         }
 
         // initializing stuff
         let context = {
             typ: null,
-            kind: null, // basically sub-type
+            kind: null, // basically sub-type or name of something
         }
 
-        let statements = {
+        let parsed = {
             definitions: [],
             functions: [],
         }
 
         for line in lines {
             // check for new context
-            if is_define_section(line) {
+            define = get_define_section(line)
+            if define is @string {
                 context.typ = "define"
-                context.kind = line[1].val
+                context.kind = define
                 continue
             }
 
-            if is_function_section(line) {
+            function = get_function_section(line)
+            if function is @string {
                 context.typ = "function"
-                context.kind = line[0].val
+                context.kind = function
+                parsed.functions.push({ label: null, statements: [] })
                 continue
             }
 
             // parse statements
             if context.typ == "define" {
-                statements.definitions.push(parse_definition(line, context.kind))
+                parsed.definitions.push(parse_definition(line, context.kind))
             }
 
             else if context.typ == "function" {
-                statements.functions.push(parse_operation(line))
+                label = get_label(line)
+                if label is @string {
+                    parsed.functions.push({ label: label, statements: [] })
+                    continue
+                }
+
+                parsed.functions[-1].statements.push(parse_operation(line))
             }
 
             else {
@@ -286,7 +323,7 @@ impl @trasm {
             if self.error { return }
         }
 
-        return statements
+        return parsed
     },
 
     run: (self) {
