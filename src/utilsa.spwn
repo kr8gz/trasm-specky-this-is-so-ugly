@@ -1,0 +1,26 @@
+#[cache_output]
+// rename to `utils.spwn` when it gets fixed
+
+impl @trasm {
+    log: (self, context: @token | @number, msg: @string) {
+        [ line_index, col_start, col_end ] = match context {
+            @number: [ context, null, null ],
+            @token: [ context.line, context.col_start, context.col_end + 1 ],
+        }
+
+        line_context = "{} | ".fmt(line_index + 1)
+
+        if msg.starts_with("ERROR") {
+            self.error = true
+            $.print("\u{1B}[0;31m", line_context, self.lines[line_index])
+        } else {
+            $.print(line_context, self.lines[line_index])
+        }
+
+        if col_start != null && col_end != null {
+            $.print(" " * (line_context.length + col_start), "^" * (col_end - col_start))
+        }
+
+        $.print(msg, "\u{1B}[0;0m\n") // clear color
+    },
+}

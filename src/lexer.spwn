@@ -1,0 +1,126 @@
+#[cache_output]
+
+extract import "constant.spwn"
+
+impl @trasm {
+    lex: (self) {
+        let tokens = []
+        let curr_line_index = 1
+        let curr_line = null
+        let start_index = 1
+        let curr_char_index = 1
+        let curr_char = null
+
+        push_token = (typ: @string, val) {
+            return tokens.push(@token::{
+                typ: typ,
+                val: val,
+                line: curr_line_index,
+                col_start: start_index,
+                col_end: curr_char_index,
+            })
+        }
+
+        update_char = () {
+            curr_char = curr_line[curr_char_index] if curr_char_index < curr_line.length else null
+        }
+
+        next = () {
+            curr_char_index++
+            update_char()
+        }
+        prev = () {
+            curr_char_index--
+            update_char()
+        }
+
+        lex_word = () {
+            let word = curr_char
+            while true {
+                next()
+                if curr_char != null && (curr_char in letters || (!word.is_empty() && curr_char.is_digit())) {
+                    word += curr_char
+                } else {
+                    prev()
+                    return push_token("word", word)
+                }
+            }
+        }
+
+        lex_num = () {
+            let num = curr_char
+            let float = false
+
+            while true {
+                next()
+
+                if curr_char == "." {
+                    if float {
+                        return self.log(curr_line_index, "ERROR: more than one decimal point in number")
+                    } else {
+                        float = true
+                        num += curr_char
+                    }
+                } else if curr_char == null || !curr_char.is_digit() {
+                    prev()
+                    return push_token("num", num as @number)
+                } else {
+                    num += curr_char
+                }
+            }
+        }
+
+        lex_str = (quotes: @string) {
+            let str = ""
+            let escape = false
+
+            while true {
+                next()
+
+                if escape {
+                    str += match curr_char {
+                        == "n" : "\n",
+                        == "t" : "\t",
+                        == "\\": "\\",
+                        == "'" : "'",
+                        == '"' : '"',
+                        else: (){
+                            self.log(curr_line_index, "ERROR: invalid escape sequence")
+                            return ""
+                        }(),
+                    }
+                    escape = false
+                } else if curr_char == "\\" {
+                    escape = true
+                } else if curr_char == quotes {
+                    return push_token("str", str)
+                } else if curr_char == null {
+                    return self.log(curr_line_index, "ERROR: unclosed string")
+                } else {
+                    str += curr_char
+                }
+            }
+        }
+
+        for i in 0..self.lines.length {
+            curr_line_index = i
+            curr_line = self.lines[i]
+            curr_char_index = -1
+            
+            while true {
+                next()
+                start_index = curr_char_index
+
+                if curr_char == null || curr_char == ";" { break }
+                else if curr_char in letters { lex_word() }
+                else if curr_char.is_digit() { lex_num() }
+                else if curr_char in "\"'" { lex_str(curr_char) }
+                else if !(curr_char in " \t") { push_token("sym", curr_char) }
+
+                if self.error { return }
+            }
+        }
+
+        return tokens
+    },
+}

@@ -1,0 +1,19 @@
+#[cache_output, no_std]
+
+type @token
+
+impl @token {
+    matches: (self, typ: @string | @array, val = @NULL) -> @bool {
+        return (
+            (
+                (typ is @array && self.typ in typ)
+                || self.typ == typ
+            )
+            && (
+                (val is @array && self.val in val)
+                || self.val == val
+                || val == @NULL
+            )
+        )
+    },
+}
