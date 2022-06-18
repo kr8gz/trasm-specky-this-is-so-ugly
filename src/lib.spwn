@@ -2,14 +2,8 @@
 
 letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-operators = [
-    "out", "wait", "call", "add", "spwn", "mov", "def", "div", "set", "sub", "mul", "pow"
-    // copilot stupid
-]
-
-define_section_tokens = ["vars", "consts"]
-
-keywords = operators + define_section_tokens
+const_define_section_tokens = ["c","const","consts","constant","constants"]
+var_define_section_tokens = ["v","var","vars","variable","variables"]
 
 type @token
 
@@ -23,10 +17,6 @@ impl @token {
             )
         )
     },
-
-    is_kw: (self) -> @bool {
-        return self.matches("word", keywords)
-    }
 }
 
 #[desc("TrIGgER ASSembly")]
@@ -187,31 +177,27 @@ impl @trasm {
             return (
                 line.length == 2 
                 && line[0].matches("sym", ".")
-                && line[1].matches("word", define_section_tokens)
+                && line[1].matches("word", const_define_section_tokens + var_define_section_tokens)
             )
         }
 
         is_function_section = (line: @array) -> @bool {
             return (
                 line.length == 2
-                && line[0].matches("word") && !line[0].is_kw()
+                && line[0].matches("word")
                 && line[1].matches("sym", ":")
             )
         }
 
         // specific parsing functions
-        parse_definition = (line: @array, kind: @string) -> @dictionary {
+        parse_definition = (line: @array, kind: @string) -> @dictionary | @NULL {
             thing = match kind {
-                == "consts": "constant",
-                == "vars": "variable",
+                in const_define_section_tokens: "constant",
+                in var_define_section_tokens: "variable",
             }
 
             if line.length != 2 { // how are we gonna add arrays to tiger ass
                 return self.log(line[0], "ERROR: invalid {} definition".fmt(thing))
-            }
-
-            if line[0].is_kw() {
-                return self.log(line[0], "ERROR: unexpected keyword")
             }
 
             if !line[0].matches("word") {
@@ -317,7 +303,7 @@ impl @trasm {
 
         if msg.starts_with("ERROR") {
             self.error = true
-            $.print("[0;31m", line_context, self.lines[line_index])
+            $.print("\u{1B}[0;31m", line_context, self.lines[line_index])
         } else {
             $.print(line_context, self.lines[line_index])
         }
@@ -326,6 +312,6 @@ impl @trasm {
             $.print(" " * (line_context.length + col_start), "^" * (col_end - col_start))
         }
 
-        $.print(msg, "\n")
+        $.print(msg, "\u{1B}[0;0m\n") // clear color
     },
 }
