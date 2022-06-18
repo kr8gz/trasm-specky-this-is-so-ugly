@@ -14,7 +14,7 @@ impl @trasm {
             lines[-1].push(token)
         }
 
-        // parser checks
+        // these check for new modes
         get_define_section = (line: @array) -> @string | @NULL {
             return line[1].val if
             
@@ -25,18 +25,19 @@ impl @trasm {
             else null
         }
 
-        get_function_section = (line: @array) -> @string | @NULL {
+        get_function_section = (line: @array) -> @string | @number | @NULL {
             return line[0].val if
 
-                line.length == 2
-                && line[0].matches(["word", "number"])
+                line.length >= 2
+                && line[0].matches(["word", "num"])
                 && line[1].matches("sym", ":")
 
             else null
+            // parse_arguments
         }
 
         get_label = (line: @array) -> @string | @NULL {
-            line[0].val if
+            return line[0].val if
 
                 line.length == 2
                 && line[0].matches("word")
@@ -73,8 +74,8 @@ impl @trasm {
             return []
         }
 
-        parse_definition = (line: @array, kind: @string) -> @dictionary | @NULL {
-            thing = match kind {
+        parse_definition = (line: @array, typ: @string) -> @dictionary | @NULL {
+            thing = match typ {
                 in const_define_section_tokens: "constant",
                 in var_define_section_tokens: "variable",
             }
@@ -95,7 +96,7 @@ impl @trasm {
         }
 
         parse_operation = (line: @array) -> @dictionary | @NULL {
-            if line.length < 2 {
+            if line.length < 2 || line[1].matches("sym") {
                 return self.log(line[0], "ERROR: invalid statement")
             }
 
@@ -111,9 +112,9 @@ impl @trasm {
         }
 
         // initializing stuff
-        let context = {
+        let mode = {
             typ: null,
-            kind: null, // basically sub-type or name of something
+            data: null, // basically sub-type or name of something
         }
 
         let parsed = {
@@ -122,35 +123,42 @@ impl @trasm {
         }
 
         for line in lines {
-            // check for new context
+            // check for new modes
             define = get_define_section(line)
-            if define is @string {
-                context.typ = "define"
-                context.kind = define
+            if define != null {
+                mode.typ = "define"
+                mode.data = define
                 continue
             }
 
             function = get_function_section(line)
-            if function is @string {
-                context.typ = "function"
-                context.kind = function
-                parsed.functions.push({ label: null, statements: [] })
+            if function != null {
+                mode.typ = "function"
+                parsed.functions.push({
+                    context: function,
+                    sections: [
+                        {
+                            label: null,
+                            statements: []
+                        }
+                    ]
+                })
                 continue
             }
 
             // parse statements
-            if context.typ == "define" {
-                parsed.definitions.push(parse_definition(line, context.kind))
+            if mode.typ == "define" {
+                parsed.definitions.push(parse_definition(line, mode.data))
             }
 
-            else if context.typ == "function" {
+            else if mode.typ == "function" {
                 label = get_label(line)
-                if label is @string {
-                    parsed.functions.push({ label: label, statements: [] })
+                if label != null {
+                    parsed.functions[-1].sections.push({ label: label, statements: [] })
                     continue
                 }
 
-                parsed.functions[-1].statements.push(parse_operation(line))
+                parsed.functions[-1].sections[-1].statements.push(parse_operation(line))
             }
 
             else {

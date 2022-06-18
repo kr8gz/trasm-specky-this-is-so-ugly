@@ -115,7 +115,7 @@ impl @trasm {
                 else if curr_char in letters { lex_word() }
                 else if curr_char.is_digit() { lex_num() }
                 else if curr_char in "\"'" { lex_str(curr_char) }
-                else if !(curr_char in " \t") { push_token("sym", curr_char) }
+                else if !(curr_char in " \t\r") { push_token("sym", curr_char) }
 
                 if self.error { return }
             }

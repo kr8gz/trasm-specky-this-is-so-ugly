@@ -31,7 +31,7 @@ thing:                  ; thing = !{ // trigger function
     div     c, a        ; c /= a
     set     a, c        ; a = c
 
-; 10:                   ; trigger funciton listening to group 10
+10:                   ; trigger funciton listening to group 10
     cmp     a, b        ; new comparison
     eq      A           ; these operations use the last cmp that happened ; if a == b go to section A
     lt      B           ; if a < b go to section B
