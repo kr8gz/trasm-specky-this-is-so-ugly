@@ -1,25 +1,17 @@
 ;set a, 5
 .vars
     thing 0.55
-    .c
+.c
     amogu "lmao gae"
-;thinf nmyu 0.69
-        sus "amogus \n "
+    ;thinf nmyu 0.69
+    sus "amogus \n "
 
 69:
     move group 1, 2, 3
 
 marco: lol, lmao
- out "rofl"
+    out "rofl"
 
 G  >
-  out "new section :flushde:"
-;xdlo
-
-
-
-.variables
-a group ?
-b group ?
-c group ?
-d group ?
+    out "new section :flushde:"
+    ;xdlo

@@ -35,12 +35,7 @@ impl @trasm {
         trasm.run()
         return trasm
     },
-
-    from_file: (name: @string) {
+    from_file: (name: @string) { // use @path when spwn v0.9 is released
         return @trasm::from_str($.readfile(name))
-    },
-
-    run: (self) {
-
     },
 }
