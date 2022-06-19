@@ -1,6 +1,7 @@
 ;set a, 5
 .vars
     thing 0.55
+    .c
     amogu "lmao gae"
 ;thinf nmyu 0.69
         sus "amogus \n "
@@ -14,3 +15,11 @@ marco: lol, lmao
 G  >
   out "new section :flushde:"
 ;xdlo
+
+
+
+.variables
+a group ?
+b group ?
+c group ?
+d group ?

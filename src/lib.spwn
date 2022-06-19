@@ -9,25 +9,30 @@ type @trasm
 // @trasm extensions
 import "lexer.spwn"
 import "parser.spwn"
+import "interpreter.spwn"
 import "utils.spwn"
 
 impl @trasm {
     from_str: (code: @string) {
         let trasm = @trasm::{
             lines: code.split("\n"),
+            
             error: false,
+
             lexed: [],
             parsed: [],
+
             variables: {},
             constants: {},
         }
 
         trasm.lexed = trasm.lex()
         if trasm.error { return trasm }
+
         trasm.parsed = trasm.parse()
         if trasm.error { return trasm }
-        // trasm.run() and shit in case
 
+        trasm.run()
         return trasm
     },
 

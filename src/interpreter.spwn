@@ -1,0 +1,62 @@
+#[cache_output]
+
+impl @trasm {
+    run: (self) {
+        get_variable = (name: @string) {
+            // dont forget local variables :bingu:
+        }
+
+        set_variable = (name: @string, val) {
+
+        }
+
+        not_inferable_type_conversion = (typ, let val) {
+            if val is @string && val != "?" {
+                val = get_variable(val)
+            }
+
+            if val is @number {
+                return typ(val)
+            }
+
+            if val == "?" {
+                return match typ {
+                    == @group: ?g,
+                    == @color: ?c,
+                    == @item: ?i,
+                }
+            }
+
+            /////////////// somehow bring over line numbers from lexer to here (over parsing)
+            return self.log(0, "ERROR: can only convert number to " + match typ {
+                == @group: "group",
+                == counter: "counter",
+                == @color: "color",
+                == @item: "item ID",
+            })
+        }
+
+        eval_value = (value: @dictionary) {
+            return match value.typ {
+                == "num" | == "str": value.val,
+                == "group": not_inferable_type_conversion(@group, value.val),
+                == "ctr": not_inferable_type_conversion(counter, value.val),
+                == "col": not_inferable_type_conversion(@color, value.val),
+                == "item": not_inferable_type_conversion(@item, value.val),
+                == "word": get_variable(value.val),
+            }
+        }
+    
+        // initialize variables and constants
+        for var in self.parsed.variables {
+            self.variables[var.name] = eval_value(var.val)
+        }
+
+        for const in self.parsed.constants {
+            self.constants[const.name] = eval_value(const.val)
+        }
+
+        $.print("variables: ", self.variables)
+        $.print("constants: ", self.constants)
+    }
+}

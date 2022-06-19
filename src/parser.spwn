@@ -21,7 +21,10 @@ impl @trasm {
                 && value[0].matches("word", not_inferable_types)
                 && (
                     value[1].matches(["num", "word"])
-                    || value[1].matches("sym", "?")
+                    || (
+                        value[0].val != "ctr"
+                        && value[1].matches("sym", "?")
+                    )
                 )
             ) {
                 return {
@@ -91,9 +94,8 @@ impl @trasm {
             }
 
             return {
-                typ: thing,
                 name: line[0].val,
-                value: parse_value(line[1:]),
+                val: parse_value(line[1:]),
             }
         }
 
@@ -171,7 +173,8 @@ impl @trasm {
         }
 
         let parsed = {
-            definitions: [],
+            variables: [],
+            constants: [],
             functions: [],
         }
 
@@ -195,7 +198,10 @@ impl @trasm {
 
             // parse statements
             if mode.typ == "define" {
-                parsed.definitions.push(parse_definition(line, mode.data))
+                match mode.data {
+                    in const_define_section_tokens: parsed.constants,
+                    in var_define_section_tokens: parsed.variables,
+                }.push(parse_definition(line, mode.data))
             }
 
             else if mode.typ == "function" {
