@@ -2,7 +2,7 @@ import "./src"
 
 extract import "utils.spwn"
 
-example = 1
+example = 0
 
 trasm = match example {
     ==0: @trasm::from_file("test/simple.trasm"),

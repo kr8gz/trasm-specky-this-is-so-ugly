@@ -14,67 +14,81 @@ impl @trasm {
             lines[-1].push(token)
         }
 
-        // these check for new modes
-        get_define_section = (line: @array) -> @string | @NULL {
-            return line[1].val if
-            
-                line.length == 2 
-                && line[0].matches("sym", ".")
-                && line[1].matches("word", const_define_section_tokens + var_define_section_tokens)
-                
-            else null
-        }
-
-        get_function_section = (line: @array) -> @string | @number | @NULL {
-            return line[0].val if
-
-                line.length >= 2
-                && line[0].matches(["word", "num"])
-                && line[1].matches("sym", ":")
-
-            else null
-            // parse_arguments
-        }
-
-        get_label = (line: @array) -> @string | @NULL {
-            return line[0].val if
-
-                line.length == 2
-                && line[0].matches("word")
-                && line[1].matches("sym", ">")
-
-            else null
-        }
-
         // specific parsing functions
-        parse_value = (value: @array) {
-            if value.length < 1 {
-                return null
-            }
-
-            if value[0].matches("word", not_inferable_types) && value[1].matches("number") {
-                match value[0].val {
-                    == "group": @group(value[1].val),
-                    // idk or with a dictionarh with type and value
-                    // and also check iof length is 2 or something
-                    // and error
-                    // and mm
-                    // and how array
-                    // mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-
+        parse_value = (value: [@token]) -> @dictionary | @NULL {
+            if (
+                value.length == 2
+                && value[0].matches("word", not_inferable_types)
+                && (
+                    value[1].matches("num")
+                    || value[1].matches("sym", "?")
+                )
+            ) {
+                return {
+                    typ: value[0].val,
+                    val: value[1].val,
                 }
             }
-            // sdfdjfsdjfsdkjfsdkjfkjsdf
-            // help me
 
+            if value.length == 1 && !value[0].matches("sym") {
+                return {
+                    typ: value[0].typ,
+                    val: value[0].val,
+                }
+            }
 
+            self.log(
+                [value[0].line, value[0].col_start, value[-1].col_end],
+                "ERROR: invalid value"
+            )
         }
 
-        parse_arguments = (arguments: @array) -> @array | @NULL {
-            return []
+        parse_arguments = (arguments: [@token], predicate: (@token) -> @bool = a => true) -> [@dictionary] {
+            if arguments.length == 0 { return [] }
+
+            commas = arguments.enumerate().filter(
+                arg => arg[1].matches("sym", ",")
+            ).map(arg => arg[0])
+
+            if commas.length > 0 {
+                args = arguments.split(commas).map(
+                    arg => arg.filter(
+                        token => !token.matches("sym", ",")
+                    )
+                ).filter(!= [])
+                
+                parsed_args = args.map(parse_value)
+                
+                for i in 0..parsed_args.length {
+                    if parsed_args[i] == null { return [] }
+
+                    if !predicate(parsed_args[i]) {
+                        self.log(
+                            [args[i][0].line, args[i][0].col_start, args[i][-1].col_end],
+                            "ERROR: invalid argument"
+                        )
+                        return []
+                    }
+                }
+                return parsed_args
+            }
+            
+            else {
+                arg = parse_value(arguments)
+                if arg == null { return [] }
+
+                if !predicate(arg) {
+                    self.log(
+                        [arguments[0].line, arguments[0].col_start, arguments[-1].col_end],
+                        "ERROR: invalid argument"
+                    )
+                    return []
+                }
+                return [arg]
+            }
         }
 
-        parse_definition = (line: @array, typ: @string) -> @dictionary | @NULL {
+        parse_definition = (line: [@token], typ: @string) -> @dictionary | @NULL {
             thing = match typ {
                 in const_define_section_tokens: "constant",
                 in var_define_section_tokens: "variable",
@@ -95,7 +109,7 @@ impl @trasm {
             }
         }
 
-        parse_operation = (line: @array) -> @dictionary | @NULL {
+        parse_operation = (line: [@token]) -> @dictionary | @NULL {
             if line.length < 2 || line[1].matches("sym") {
                 return self.log(line[0], "ERROR: invalid statement")
             }
@@ -111,10 +125,61 @@ impl @trasm {
             }
         }
 
+        // these check for new modes
+        get_define_section = (line: [@token]) -> @string | @NULL {
+            return line[1].val if
+            
+                line.length == 2 
+                && line[0].matches("sym", ".")
+                && line[1].matches("word", const_define_section_tokens + var_define_section_tokens)
+                
+            else null
+        }
+
+        get_function_section = (line: [@token]) -> @dictionary | @NULL {
+            if (
+                line.length >= 2
+                && line[0].matches(["word", "num"])
+                && line[1].matches("sym", ":")
+            ) {
+                args = parse_arguments(line[2:], arg => arg.typ == "word").map(arg => arg.val)
+
+                if line[0].matches("num") && args.length > 0 {
+                    return self.log(
+                        [line[0].line, line[2].col_start, line[-1].col_end],
+                        "ERROR: trigger functions may not have arguments"
+                    )
+                }
+
+                return {
+                    context: line[0].val,
+                    args: args,
+                    sections: [
+                        {
+                            label: null,
+                            statements: []
+                        }
+                    ]
+                }
+            }
+            
+            return null
+        }
+
+        get_label = (line: [@token]) -> @string | @NULL {
+            return line[0].val if
+
+                line.length == 2
+                && line[0].matches("word")
+                && line[1].matches("sym", ">")
+
+            else null
+        }
+
         // initializing stuff
         let mode = {
             typ: null,
-            data: null, // basically sub-type or name of something
+            data: null, // extra data for the current mode
         }
 
         let parsed = {
@@ -134,17 +199,11 @@ impl @trasm {
             function = get_function_section(line)
             if function != null {
                 mode.typ = "function"
-                parsed.functions.push({
-                    context: function,
-                    sections: [
-                        {
-                            label: null,
-                            statements: []
-                        }
-                    ]
-                })
+                parsed.functions.push(function)
                 continue
             }
+
+            if self.error { return }
 
             // parse statements
             if mode.typ == "define" {

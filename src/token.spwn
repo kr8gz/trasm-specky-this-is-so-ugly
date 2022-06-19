@@ -3,7 +3,7 @@
 type @token
 
 impl @token {
-    matches: (self, typ: @string | @array, val = @NULL) -> @bool {
+    matches: (self, typ: @string | [@string], val = @NULL) -> @bool {
         return (
             (
                 (typ is @array && self.typ in typ)

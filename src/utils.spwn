@@ -4,10 +4,11 @@ color_reset = "\u{1B}[0m"
 color = (color) => "\u{1B}[38;5;{}m".fmt(color) 
 
 impl @trasm {
-    log: (self, context: @token | @number, msg: @string) {
+    log: (self, context: @token | @number | [@number], msg: @string) {
         [ line_index, col_start, col_end ] = match context {
             @number: [ context, null, null ],
-            @token: [ context.line, context.col_start, context.col_end + 1 ],
+            [@number]: context
+            @token: [ context.line, context.col_start, context.col_end ],
         }
 
         line_context = "{} | ".fmt(line_index + 1)
@@ -20,10 +21,10 @@ impl @trasm {
         }
 
         if col_start != null && col_end != null {
-            $.print(" " * (line_context.length + col_start), "^" * (col_end - col_start))
+            $.print(" " * (line_context.length + col_start), "^" * (col_end + 1 - col_start))
         }
 
-        $.print(msg, color_reset) // clear color
+        $.print(msg, color_reset, "\n") // clear color
     },
 }
 
