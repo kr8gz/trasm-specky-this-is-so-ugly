@@ -20,7 +20,7 @@ impl @trasm {
                 value.length == 2
                 && value[0].matches("word", not_inferable_types)
                 && (
-                    value[1].matches("num")
+                    value[1].matches(["num", "word"])
                     || value[1].matches("sym", "?")
                 )
             ) {
@@ -48,44 +48,32 @@ impl @trasm {
 
             commas = arguments.enumerate().filter(
                 arg => arg[1].matches("sym", ",")
-            ).map(arg => arg[0])
+            ).map(
+                arg => arg[0]
+            )
 
-            if commas.length > 0 {
-                args = arguments.split(commas).map(
-                    arg => arg.filter(
-                        token => !token.matches("sym", ",")
-                    )
-                ).filter(!= [])
-                
-                parsed_args = args.map(parse_value)
-                
-                for i in 0..parsed_args.length {
-                    if parsed_args[i] == null { return [] }
+            split = arguments.split(commas) if commas.length > 0 else [arguments]
 
-                    if !predicate(parsed_args[i]) {
-                        self.log(
-                            [args[i][0].line, args[i][0].col_start, args[i][-1].col_end],
-                            "ERROR: invalid argument"
-                        )
-                        return []
-                    }
-                }
-                return parsed_args
-            }
+            args = split.map(
+                arg => arg.filter(
+                    token => !token.matches("sym", ",")
+                )
+            ).filter(!= [])
             
-            else {
-                arg = parse_value(arguments)
-                if arg == null { return [] }
+            parsed_args = args.map(parse_value)
+            
+            for i in 0..parsed_args.length {
+                if parsed_args[i] == null { return [] }
 
-                if !predicate(arg) {
+                if !predicate(parsed_args[i]) {
                     self.log(
-                        [arguments[0].line, arguments[0].col_start, arguments[-1].col_end],
+                        [args[i][0].line, args[i][0].col_start, args[i][-1].col_end],
                         "ERROR: invalid argument"
                     )
                     return []
                 }
-                return [arg]
             }
+            return parsed_args
         }
 
         parse_definition = (line: [@token], typ: @string) -> @dictionary | @NULL {
