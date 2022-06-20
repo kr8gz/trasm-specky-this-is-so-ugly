@@ -44,6 +44,7 @@ impl @trasm {
                 == "col": not_inferable_type_conversion(@color, value.val),
                 == "item": not_inferable_type_conversion(@item, value.val),
                 == "word": get_variable(value.val),
+                == "array": [eval_value(val) for val in value.val]
             }
         }
     

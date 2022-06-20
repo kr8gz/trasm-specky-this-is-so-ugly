@@ -24,11 +24,12 @@ impl @trasm {
 
             variables: {},
             constants: {},
+
+            scopes: [],
+            locals: {},
         }
 
         trasm.lexed = trasm.lex()
-        if trasm.error { return trasm }
-
         trasm.parsed = trasm.parse()
         if trasm.error { return trasm }
 

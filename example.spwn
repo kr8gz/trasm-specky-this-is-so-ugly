@@ -7,6 +7,7 @@ example = 2
 trasm = match example {
     ==0: @trasm::from_file("test/simple.trasm"),
     ==1: @trasm::from_file("test/long.trasm"),
+    ==2: @trasm::from_file("test/bad.trasm"),
     else: "💀",
 }
 

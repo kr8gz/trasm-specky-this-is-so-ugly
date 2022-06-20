@@ -22,9 +22,11 @@ impl @trasm {
 
         if col_start != null && col_end != null {
             $.print(" " * (line_context.length + col_start), "^" * (col_end + 1 - col_start))
+        } else {
+            $.print()
         }
 
-        $.print(msg, color_reset, "\n") // clear color
+        $.print(msg, color_reset, "\n")
     },
 }
 

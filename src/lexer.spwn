@@ -22,7 +22,7 @@ impl @trasm {
         }
 
         update_char = () {
-            curr_char = curr_line[curr_char_index] if curr_char_index < curr_line.length else null
+            curr_char = curr_line[curr_char_index] if curr_char_index < @array(curr_line).length else null
         }
 
         next = () {
@@ -116,8 +116,6 @@ impl @trasm {
                 else if curr_char.is_digit() || curr_char == "-" { lex_num() }
                 else if curr_char in "\"'" { lex_str(curr_char) }
                 else if !(curr_char in " \t\r") { push_token("sym", curr_char) }
-
-                if self.error { return }
             }
         }
 

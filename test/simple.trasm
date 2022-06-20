@@ -1,6 +1,7 @@
 ;set a, 5
 .vars
     thing 0.55
+    arrtest 3, 4, 5, "no"   ; make `arrtest 3,` for one element 😡😡
 .c
     amogu "lmao gae"
     ;thinf nmyu 0.69
@@ -12,6 +13,6 @@
 marco: lol, lmao
     out "rofl"
 
-G  >
+    G >
     out "new section :flushde:"
     ;xdlo

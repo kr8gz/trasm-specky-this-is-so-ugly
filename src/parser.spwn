@@ -93,9 +93,14 @@ impl @trasm {
                 return self.log(line[0], "ERROR: expected {} name".fmt(thing))
             }
 
+            values = parse_arguments(line[1:])
+
             return {
                 name: line[0].val,
-                val: parse_value(line[1:]),
+                val: values[0] if values.length == 1 else {
+                    typ: "array",
+                    val: values,
+                },
             }
         }
 
@@ -194,14 +199,25 @@ impl @trasm {
                 continue
             }
 
-            if self.error { return }
-
             // parse statements
             if mode.typ == "define" {
+                def = parse_definition(line, mode.data)
+                if def == null { continue }
+
+                if def.name in parsed.constants.map(c => c.name) {
+                    self.log(line[0].line, "ERROR: constant already defined")
+                    continue
+                }
+
+                if def.name in parsed.variables.map(v => v.name) {
+                    self.log(line[0].line, "ERROR: variable already defined")
+                    continue
+                }
+
                 match mode.data {
                     in const_define_section_tokens: parsed.constants,
                     in var_define_section_tokens: parsed.variables,
-                }.push(parse_definition(line, mode.data))
+                }.push(def)
             }
 
             else if mode.typ == "function" {
@@ -217,8 +233,6 @@ impl @trasm {
             else {
                 self.log(line[0], "ERROR: expected a define or function section")
             }
-
-            if self.error { return }
         }
 
         return parsed
