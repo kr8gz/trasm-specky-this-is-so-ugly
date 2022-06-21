@@ -12,7 +12,7 @@ impl @trasm {
         let curr_char = null
 
         push_token = (typ: @string, val) {
-            tokens.push(@token::{
+            return tokens.push(@token::{
                 typ: typ,
                 val: val,
                 line: curr_line_index,
@@ -102,12 +102,11 @@ impl @trasm {
                 } else if curr_char == quotes {
                     return push_token("str", str)
                 } else if curr_char == null {
-                    curr_char_index--
                     self.log(
                         [curr_line_index, str_start, curr_char_index],
                         "ERROR: unclosed string"
                     )
-                    return push_token("str", str)
+                    return push_token("str", str) // "return" would be enough
                 } else {
                     str += curr_char
                 }

@@ -7,8 +7,8 @@
     mogus   'sus'
 
 .vars
-    a   ctr 10
-    b   ctr 20
+    ; a   ctr 10
+    ; b   ctr 20
     sussy 'amog us'
 
 start:                  ; synonym for "0:"

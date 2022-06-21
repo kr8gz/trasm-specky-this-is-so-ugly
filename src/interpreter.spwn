@@ -1,7 +1,5 @@
 #[cache_output]
 
-extract import "constant.spwn"
-
 impl @trasm {
     run: (self) {
         get_variable = (name: @string) {
@@ -49,16 +47,16 @@ impl @trasm {
             }
         }
     
-        // initialize constants and variables
-        for section in self.parsed.definitions {
-            for entry in section.entries {
-                match section.typ {
-                    in const_define_section_tokens: self.constants.set(entry.name, eval_value(entry.val)),
-                    in var_define_section_tokens:   self.variables.set(entry.name, eval_value(entry.val)),
-                }
-            }
+        // initialize variables and constants
+        for var in self.parsed.variables {
+            self.variables[var.name] = eval_value(var.val)
         }
 
-        
+        for const in self.parsed.constants {
+            self.constants[const.name] = eval_value(const.val)
+        }
+
+        $.print("variables: ", self.variables)
+        $.print("constants: ", self.constants)
     }
 }

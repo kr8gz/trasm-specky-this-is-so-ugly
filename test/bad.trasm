@@ -1,12 +1,7 @@
-grr
-
 .c
-    many error, 3L: 4 group
+    many error, 3L: 4 group, 69 group
     many testl ol
-    brocken string "
+    broken string "
     stupid
-    nombre 0.2.3
-    §§ "\xd"
-
-.v
-    many''
+    nombre 0..3
+    §§
