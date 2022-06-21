@@ -4,29 +4,43 @@ color_reset = "\u{1B}[0m"
 color = (color) => "\u{1B}[38;5;{}m".fmt(color) 
 
 impl @trasm {
-    log: (self, context: @token | @number | [@number], msg: @string) {
+    fmt_line: (index: @number, line: @string, indent: @number = 3) -> @string {
+        return "{} | {}".fmt([@string(index + 1).r_pad(indent), line])
+    },
+    
+    fmt_arrows: (start: @number | @NULL, stop: @number | @NULL, line: @string) -> @string {
+        if start != null && stop != null {
+            return " " * (line.index("|") + 2 + start) + "^" * (stop + 1 - start)
+        } else {
+            return ""
+        }
+    },
+    
+    log: (self, context: @token | @number | [@number], msg: @string, section_index: @number = null) {
         [ line_index, col_start, col_end ] = match context {
             @number: [ context, null, null ],
             [@number]: context
             @token: [ context.line, context.col_start, context.col_end ],
         }
 
-        line_context = "{} | ".fmt(line_index + 1)
+        section = "" if section_index == null else @trasm::fmt_line(section_index, self.lines[section_index])
+        line_string = @trasm::fmt_line(line_index + 1, self.lines[line_index])
+        arrows = @trasm::fmt_arrows(col_start, col_end, line_string)
 
-        if msg.starts_with("ERROR") {
-            self.error = true
-            $.print(color(196), line_context, self.lines[line_index])
-        } else {
-            $.print(line_context, self.lines[line_index])
+        color_str = match true {
+            ==msg.starts_with("ERROR"): (){
+                self.error = true
+                return color(196)
+            }(),
+            ==msg.starts_with("WARN"): color(208),
+            ==msg.starts_with("INFO"): color(220),
+            else: "",
         }
 
-        if col_start != null && col_end != null {
-            $.print(" " * (line_context.length + col_start), "^" * (col_end + 1 - col_start))
-        } else {
-            $.print()
-        }
-
-        $.print(msg, color_reset, "\n")
+        if section.length > 0 { $.print(color_str, section) }
+        $.print(color_str, line_string)
+        if arrows.length > 0 { $.print(arrows) }
+        $.print(msg, color_reset)
     },
 }
 

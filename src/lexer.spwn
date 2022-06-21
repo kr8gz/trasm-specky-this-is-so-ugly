@@ -56,7 +56,10 @@ impl @trasm {
 
                 if curr_char == "." {
                     if float {
-                        return self.log(curr_line_index, "ERROR: more than one decimal point in number")
+                        return self.log(
+                            [curr_line_index, curr_char_index, curr_char_index],
+                            "ERROR: more than one decimal point in number"
+                        )
                     } else {
                         float = true
                         num += curr_char
@@ -73,6 +76,7 @@ impl @trasm {
         lex_str = (quotes: @string) {
             let str = ""
             let escape = false
+            str_start = curr_char_index
 
             while true {
                 next()
@@ -85,7 +89,10 @@ impl @trasm {
                         == "'" : "'",
                         == '"' : '"',
                         else: (){
-                            self.log(curr_line_index, "ERROR: invalid escape sequence")
+                            self.log(
+                                [curr_line_index, curr_char_index - 1, curr_char_index],
+                                "ERROR: invalid escape sequence"
+                            )
                             return ""
                         }(),
                     }
@@ -95,7 +102,11 @@ impl @trasm {
                 } else if curr_char == quotes {
                     return push_token("str", str)
                 } else if curr_char == null {
-                    return self.log(curr_line_index, "ERROR: unclosed string")
+                    self.log(
+                        [curr_line_index, str_start, curr_char_index],
+                        "ERROR: unclosed string"
+                    )
+                    return push_token("str", str) // "return" would be enough
                 } else {
                     str += curr_char
                 }

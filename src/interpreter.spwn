@@ -27,8 +27,7 @@ impl @trasm {
                 }
             }
 
-            /////////////// somehow bring over line numbers from lexer to here (over parsing)
-            return self.log(0, "ERROR: can only convert number to " + match typ {
+            return self.log(val.line, "ERROR: can only convert number to " + match typ {
                 == @group: "group",
                 == counter: "counter",
                 == @color: "color",

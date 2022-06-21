@@ -6,12 +6,10 @@ impl @trasm {
     parse: (self) {
         // organize the tokens into an array of lines
         let lines = []
-        let lineno = -1
 
         for token in self.lexed {
-            if token.line > lineno { lines.push([]) }
-            lineno = token.line
-            lines[-1].push(token)
+            while token.line >= lines.length { lines.push([]) }
+            lines[token.line].push(token)
         }
 
         // specific parsing functions
@@ -42,7 +40,7 @@ impl @trasm {
 
             self.log(
                 [value[0].line, value[0].col_start, value[-1].col_end],
-                "ERROR: invalid value"
+                "ERROR: invalid value",
             )
         }
 
@@ -71,7 +69,7 @@ impl @trasm {
                 if !predicate(parsed_args[i]) {
                     self.log(
                         [args[i][0].line, args[i][0].col_start, args[i][-1].col_end],
-                        "ERROR: invalid argument"
+                        "ERROR: invalid argument",
                     )
                     return []
                 }
@@ -120,7 +118,7 @@ impl @trasm {
             }
         }
 
-        // these check for new modes
+        // these check for new contexts
         get_define_section = (line: [@token]) -> @string | @NULL {
             return line[1].val if
             
@@ -132,33 +130,22 @@ impl @trasm {
         }
 
         get_function_section = (line: [@token]) -> @dictionary | @NULL {
-            if (
+            return {
+                context: line[0].val,
+                args: parse_arguments(line[2:], arg => arg.typ == "word").map(arg => arg.val),
+                sections: [
+                    {
+                        label: null,
+                        statements: []
+                    }
+                ]
+            } if
+                
                 line.length >= 2
                 && line[0].matches(["word", "num"])
                 && line[1].matches("sym", ":")
-            ) {
-                args = parse_arguments(line[2:], arg => arg.typ == "word").map(arg => arg.val)
 
-                if line[0].matches("num") && args.length > 0 {
-                    return self.log(
-                        [line[0].line, line[2].col_start, line[-1].col_end],
-                        "ERROR: trigger functions may not have arguments"
-                    )
-                }
-
-                return {
-                    context: line[0].val,
-                    args: args,
-                    sections: [
-                        {
-                            label: null,
-                            statements: []
-                        }
-                    ]
-                }
-            }
-            
-            return null
+            else null
         }
 
         get_label = (line: [@token]) -> @string | @NULL {
@@ -172,66 +159,82 @@ impl @trasm {
         }
 
         // initializing stuff
-        let mode = {
+        let curr_line = null // for interpreter errors 
+
+        let context = {
             typ: null,
-            data: null, // extra data for the current mode
+            data: null, // extra data for the current context
         }
 
         let parsed = {
-            variables: [],
-            constants: [],
+            definitions: [],
             functions: [],
         }
 
         for line in lines {
-            // check for new modes
-            define = get_define_section(line)
-            if define != null {
-                mode.typ = "define"
-                mode.data = define
-                continue
-            }
+            if line.length > 0 {
+                curr_line = line[0].line
 
-            function = get_function_section(line)
-            if function != null {
-                mode.typ = "function"
-                parsed.functions.push(function)
-                continue
-            }
-
-            // parse statements
-            if mode.typ == "define" {
-                def = parse_definition(line, mode.data)
-                if def == null { continue }
-
-                if def.name in parsed.constants.map(c => c.name) {
-                    self.log(line[0].line, "ERROR: constant already defined")
+                // check for new contexts
+                define = get_define_section(line)
+                if define != null {
+                    context.typ = "define"
+                    context.data = define
+                    parsed.definitions.push({
+                        typ: define,
+                        entries: [],
+                        line: curr_line,
+                    })
                     continue
                 }
 
-                if def.name in parsed.variables.map(v => v.name) {
-                    self.log(line[0].line, "ERROR: variable already defined")
+                let function = get_function_section(line)
+                if function != null {
+                    context.typ = "function"
+                    function.line = curr_line
+                    parsed.functions.push(function)
                     continue
                 }
 
-                match mode.data {
-                    in const_define_section_tokens: parsed.constants,
-                    in var_define_section_tokens: parsed.variables,
-                }.push(def)
-            }
+                // parse statements
+                if context.typ == "define" {
+                    let def = parse_definition(line, context.data)
+                    if def == null { continue }
 
-            else if mode.typ == "function" {
-                label = get_label(line)
-                if label != null {
-                    parsed.functions[-1].sections.push({ label: label, statements: [] })
-                    continue
+                    let flag = false
+                    
+                    for section in parsed.definitions {
+                        if def.name in section.entries.map(e => e.name) {
+                            // log with section.line when specky is finally done
+                            self.log(line[0].line, "ERROR: {} already defined".fmt(match section.typ {
+                                in const_define_section_tokens: "constant",
+                                in var_define_section_tokens: "variable",
+                            }), section.line)
+                            flag = true
+                        }
+                    }
+
+                    if flag { continue }
+
+                    def.line = curr_line
+                    parsed.definitions[-1].entries.push(def)
                 }
 
-                parsed.functions[-1].sections[-1].statements.push(parse_operation(line))
-            }
+                else if context.typ == "function" {
+                    label = get_label(line)
+                    if label != null {
+                        parsed.functions[-1].sections.push({ label: label, statements: [] })
+                        continue
+                    }
 
-            else {
-                self.log(line[0], "ERROR: expected a define or function section")
+                    let statement = parse_operation(line)
+                    statement.line = curr_line
+                    parsed.functions[-1].sections[-1].statements.push(statement)
+                }
+
+                else {
+                    self.log(line[0], "ERROR: expected a define or function section")
+                }
             }
         }
 

@@ -13,7 +13,7 @@ trasm = match example {
 
 if trasm is @trasm {
     if !trasm.error {
-        $.print(color(11), "Lexed:\n", trasm.lexed, color_reset)
+        // $.print(color(11), "Lexed:\n", trasm.lexed, color_reset)
         $.print(color(13), "Parsed:\n", trasm.parsed, color_reset)
     }
 } else {
