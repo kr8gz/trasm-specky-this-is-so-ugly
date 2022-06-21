@@ -206,7 +206,7 @@ impl @trasm {
                     for section in parsed.definitions {
                         if def.name in section.entries.map(e => e.name) {
                             // log with section.line when specky is finally done
-                            self.log(line[0].line, "ERROR: {} already defined".fmt(match section.typ {
+                            self.log(line[0], "ERROR: {} already defined".fmt(match section.typ {
                                 in const_define_section_tokens: "constant",
                                 in var_define_section_tokens: "variable",
                             }), section.line)

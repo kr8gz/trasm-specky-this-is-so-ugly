@@ -10,7 +10,11 @@ impl @trasm {
     
     fmt_arrows: (start: @number | @NULL, stop: @number | @NULL, line: @string) -> @string {
         if start != null && stop != null {
-            return " " * (line.index("|") + 2 + start) + "^" * (stop + 1 - start)
+            return "{}|{}{}".fmt([
+                " " * line.index("|"),
+                " " * (1 + start),
+                "^" * (stop + 1 - start),
+            ])
         } else {
             return ""
         }
@@ -40,7 +44,7 @@ impl @trasm {
         if section.length > 0 { $.print(color_str, section) }
         $.print(color_str, line_string)
         if arrows.length > 0 { $.print(arrows) }
-        $.print(msg, color_reset)
+        $.print(msg, color_reset, "\n")
     },
 }
 

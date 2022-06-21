@@ -15,7 +15,7 @@ import "utils.spwn"
 impl @trasm {
     from_str: (code: @string) {
         let trasm = @trasm::{
-            lines: code.split("\n"),
+            lines: code.split("\n").map(line => line.replace(r"\r","")), // .map(line => line.r_trim())
             
             error: false,
 
