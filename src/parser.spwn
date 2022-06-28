@@ -39,8 +39,8 @@ impl @trasm {
             }
 
             self.log(
-                [value[0].line, value[0].col_start, value[-1].col_end],
                 "ERROR: invalid value",
+                [value[0].line, value[0].col_start, value[-1].col_end],
             )
         }
 
@@ -68,8 +68,8 @@ impl @trasm {
 
                 if !predicate(parsed_args[i]) {
                     self.log(
-                        [args[i][0].line, args[i][0].col_start, args[i][-1].col_end],
                         "ERROR: invalid argument",
+                        [args[i][0].line, args[i][0].col_start, args[i][-1].col_end],
                     )
                     return []
                 }
@@ -84,11 +84,11 @@ impl @trasm {
             }
 
             if line.length < 2 {
-                return self.log(line[0], "ERROR: invalid {} definition".fmt(thing))
+                return self.log("ERROR: invalid {} definition".fmt(thing), line[0])
             }
 
             if !line[0].matches("word") {
-                return self.log(line[0], "ERROR: expected {} name".fmt(thing))
+                return self.log("ERROR: expected {} name".fmt(thing), line[0])
             }
 
             values = parse_arguments(line[1:])
@@ -104,11 +104,11 @@ impl @trasm {
 
         parse_operation = (line: [@token]) -> @dictionary | @NULL {
             if line.length < 2 || line[1].matches("sym") {
-                return self.log(line[0], "ERROR: invalid statement")
+                return self.log("ERROR: invalid statement", line[0])
             }
 
             if !line[0].matches("word") {
-                return self.log(line[0], "ERROR: expected operation name")
+                return self.log("ERROR: expected operation name", line[0])
             }
 
             return {
@@ -129,7 +129,7 @@ impl @trasm {
             else null
         }
 
-        get_function_section = (line: [@token]) -> @dictionary | @NULL {
+        get_function_section = (line: [@token]) -> @dictionary | @NULL {                   
             return {
                 context: line[0].val,
                 args: parse_arguments(line[2:], arg => arg.typ == "word").map(arg => arg.val),
@@ -138,7 +138,7 @@ impl @trasm {
                         label: null,
                         statements: []
                     }
-                ]
+                ],
             } if
                 
                 line.length >= 2
@@ -180,6 +180,7 @@ impl @trasm {
                 if define != null {
                     context.typ = "define"
                     context.data = define
+
                     parsed.definitions.push({
                         typ: define,
                         entries: [],
@@ -205,11 +206,10 @@ impl @trasm {
                     
                     for section in parsed.definitions {
                         if def.name in section.entries.map(e => e.name) {
-                            // log with section.line when specky is finally done
-                            self.log(line[0], "ERROR: {} already defined".fmt(match section.typ {
+                            self.log("ERROR: {} already defined".fmt(match section.typ {
                                 in const_define_section_tokens: "constant",
                                 in var_define_section_tokens: "variable",
-                            }), section.line)
+                            }), line[0], section.line)
                             flag = true
                         }
                     }
@@ -233,7 +233,7 @@ impl @trasm {
                 }
 
                 else {
-                    self.log(line[0], "ERROR: expected a define or function section")
+                    self.log("ERROR: expected a define or function section", line[0])
                 }
             }
         }

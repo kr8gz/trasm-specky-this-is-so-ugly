@@ -29,12 +29,12 @@ impl @trasm {
                 }
             }
 
-            return self.log(val.line, "ERROR: can only convert number to " + match typ {
+            return self.log("ERROR: can only convert number to " + match typ {
                 == @group: "group",
-                == counter: "counter",
+                == counter: "counter", // counter(x) creates a new counter while the others convert to the type idk specky you write
                 == @color: "color",
                 == @item: "item ID",
-            })
+            }, val.line)
         }
 
         eval_value = (value: @dictionary) {
@@ -48,7 +48,41 @@ impl @trasm {
                 == "array": [eval_value(val) for val in value.val]
             }
         }
-    
+
+        let run_function
+
+        run_statement = (name: @string, args: [@dictionary]) {
+            match name {
+                =="set": _,
+                =="add": _,
+                =="sub": _,
+                =="mul": _,
+                =="div": _,
+                =="mod": _,
+                =="pow": _,
+                =="spwn": _,
+                =="call": _,
+                =="cmp": _,
+            }
+        }
+
+        get_function = (context: @string | @number) -> @dictionary | @NULL {
+            for function in self.parsed.functions {
+                if function.context == context {
+                    return function
+                }
+            }
+            return null
+        }
+
+        run_function = (context: @string | @number, args: [@dictionary] = []) {
+
+
+            // if self.parsed.functions[name].args.length != args.length {
+                //self.log(eXPECTED other amount of arguments:rage:)
+            //}
+        }
+
         // initialize constants and variables
         for section in self.parsed.definitions {
             for entry in section.entries {
@@ -59,6 +93,11 @@ impl @trasm {
             }
         }
 
-        
+        // TODO: idk use match or shit  // start_contexts array (specky job) ok zoomer
+        if is_function("start") { run_function("start") }//////////////////SPEcjy
+        else if is_function(0)  { run_function("0") } // sex
+        else {
+            self.log("ERROR: no start function found")
+        }
     }
 }

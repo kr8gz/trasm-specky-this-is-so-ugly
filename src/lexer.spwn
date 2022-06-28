@@ -57,8 +57,8 @@ impl @trasm {
                 if curr_char == "." {
                     if float {
                         return self.log(
+                            "ERROR: more than one decimal point in number",
                             [curr_line_index, curr_char_index, curr_char_index],
-                            "ERROR: more than one decimal point in number"
                         )
                     } else {
                         float = true
@@ -90,8 +90,8 @@ impl @trasm {
                         == '"' : '"',
                         else: (){
                             self.log(
+                                "ERROR: invalid escape sequence",
                                 [curr_line_index, curr_char_index - 1, curr_char_index],
-                                "ERROR: invalid escape sequence"
                             )
                             return ""
                         }(),
@@ -104,8 +104,8 @@ impl @trasm {
                 } else if curr_char == null {
                     curr_char_index--
                     self.log(
+                        "ERROR: unclosed string",
                         [curr_line_index, str_start, curr_char_index],
-                        "ERROR: unclosed string"
                     )
                     return push_token("str", str)
                 } else {

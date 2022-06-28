@@ -20,17 +20,7 @@ impl @trasm {
         }
     },
     
-    log: (self, context: @token | @number | [@number], msg: @string, section_index: @number = null) {
-        [ line_index, col_start, col_end ] = match context {
-            @number: [ context, null, null ],
-            [@number]: context
-            @token: [ context.line, context.col_start, context.col_end ],
-        }
-
-        section = "" if section_index == null else @trasm::fmt_line(section_index, self.lines[section_index])
-        line_string = @trasm::fmt_line(line_index + 1, self.lines[line_index])
-        arrows = @trasm::fmt_arrows(col_start, col_end, line_string)
-
+    log: (self, msg: @string, context: @token | @number | [@number] = null, section_index: @number = null) {
         color_str = match true {
             ==msg.starts_with("ERROR"): (){
                 self.error = true
@@ -40,11 +30,24 @@ impl @trasm {
             ==msg.starts_with("INFO"): color(220),
             else: "",
         }
+        
+        if context != null {
+            [ line_index, col_start, col_end ] = match context {
+                @number: [ context, null, null ],
+                [@number]: context
+                @token: [ context.line, context.col_start, context.col_end ],
+            }
 
-        if section.length > 0 { $.print(color_str, section) }
-        $.print(color_str, line_string)
-        if arrows.length > 0 { $.print(arrows) }
-        $.print(msg, color_reset, "\n")
+            section = "" if section_index == null else @trasm::fmt_line(section_index, self.lines[section_index])
+            line_string = @trasm::fmt_line(line_index + 1, self.lines[line_index])
+            arrows = @trasm::fmt_arrows(col_start, col_end, line_string)
+
+            if section.length > 0 { $.print(color_str, section) }
+            $.print(color_str, line_string)
+            if arrows.length > 0 { $.print(arrows) }
+        }
+
+        $.print(color_str, msg, color_reset, "\n")
     },
 }
 
