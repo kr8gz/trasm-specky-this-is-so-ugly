@@ -56,22 +56,31 @@ impl @trasm {
 
             // we should sort these somehow lol
             match name {
+                // assignment operators and such
                 == "set": _,
+                == "del": _,
+                // math operators
                 == "add": _,
                 == "sub": _,
                 == "mul": _,
                 == "div": _,
                 == "mod": _,
                 == "pow": _,
-                == "spwn": _,
-                == "call": _,
+                // comparison operators
                 == "cmp": _,
-                == "ret": _,
-                == "mov": _,
-                == "goto": _,
                 == "eq": _,
+                == "ne": _,
                 == "lt": _,
                 == "gt": _,
+                == "le": _,
+                == "ge": _,
+                // function/macro calls
+                == "spwn": _,
+                == "call": _,
+                // control flow
+                == "mov": _,
+                == "goto": _,
+                // pseudo-built-in functions
                 == "wait": _,
             }
         }
