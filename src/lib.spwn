@@ -33,6 +33,17 @@ impl @trasm {
         trasm.parsed = trasm.parse()
         if trasm.error { return trasm }
 
+        /*
+         *  Self-entitled SPWN Expert — Today at 17:27
+         *  I would
+         *  trasm.push_error("dhrjejje")
+
+         *  // when everything finished
+         *  trasm.print_errors()
+         *  hungty — Today at 17:27
+         *  thats what i wanted to do too
+         */
+
         trasm.run()
         return trasm
     },

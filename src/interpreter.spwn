@@ -52,35 +52,49 @@ impl @trasm {
         let run_function
 
         run_statement = (name: @string, args: [@dictionary]) {
+            $.print("running {} with {}".fmt([name, args]))
+
+            // we should sort these somehow lol
             match name {
-                =="set": _,
-                =="add": _,
-                =="sub": _,
-                =="mul": _,
-                =="div": _,
-                =="mod": _,
-                =="pow": _,
-                =="spwn": _,
-                =="call": _,
-                =="cmp": _,
+                == "set": _,
+                == "add": _,
+                == "sub": _,
+                == "mul": _,
+                == "div": _,
+                == "mod": _,
+                == "pow": _,
+                == "spwn": _,
+                == "call": _,
+                == "cmp": _,
+                == "ret": _,
+                == "mov": _,
+                == "goto": _,
+                == "eq": _,
+                == "lt": _,
+                == "gt": _,
+                == "wait": _,
             }
         }
 
-        get_function = (context: @string | @number) -> @dictionary | @NULL {
-            for function in self.parsed.functions {
-                if function.context == context {
-                    return function
+        run_function = (name: @string, args: @array = []) {
+            func = self.parsed.functions[name]
+
+            if args.length != func.args.length {
+                self.log(
+                    "ERROR: function '{}' takes {} arguments, found {}".fmt([name, func.args.length, args.length]),
+                    0, // this arg should be the line where it's called
+                    func.line
+                )
+                return
+            }
+
+            let section_index = 0
+            while section_index < func.sections.length {
+                for statement in func.sections[section_index].statements {
+                    run_statement(statement.name, statement.args)
                 }
+                section_index++
             }
-            return null
-        }
-
-        run_function = (context: @string | @number, args: [@dictionary] = []) {
-
-
-            // if self.parsed.functions[name].args.length != args.length {
-                //self.log(eXPECTED other amount of arguments:rage:)
-            //}
         }
 
         // initialize constants and variables
@@ -93,11 +107,17 @@ impl @trasm {
             }
         }
 
-        // TODO: idk use match or shit  // start_contexts array (specky job) ok zoomer
-        if is_function("start") { run_function("start") }//////////////////SPEcjy
-        else if is_function(0)  { run_function("0") } // sex
-        else {
-            self.log("ERROR: no start function found")
+        start = self.parsed.functions.keys().filter(in start_contexts)
+        match start.length {
+            == 0: self.log("ERROR: no start function found"),
+            == 1: run_function(start[0]),
+            else: () {
+                start_lines = start.map(f => self.parsed.functions[f].line).sort()
+                self.log(
+                    "ERROR: multiple start functions found",
+                    start_lines[-1], start_lines[:-1]
+                )
+            } ()
         }
     }
 }

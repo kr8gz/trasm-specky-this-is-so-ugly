@@ -112,7 +112,6 @@ impl @trasm {
             }
 
             return {
-                typ: "operation",
                 name: line[0].val,
                 args: parse_arguments(line[1:]),
             }
@@ -131,7 +130,6 @@ impl @trasm {
 
         get_function_section = (line: [@token]) -> @dictionary | @NULL {                   
             return {
-                context: line[0].val,
                 args: parse_arguments(line[2:], arg => arg.typ == "word").map(arg => arg.val),
                 sections: [
                     {
@@ -168,7 +166,7 @@ impl @trasm {
 
         let parsed = {
             definitions: [],
-            functions: [],
+            functions: {},
         }
 
         for line in lines {
@@ -191,9 +189,20 @@ impl @trasm {
 
                 let function = get_function_section(line)
                 if function != null {
+                    name = @string(line[0].val)
+                    if name in parsed.functions {
+                        self.log(
+                            "ERROR: function '{}' already defined".fmt(name),
+                            line[0], parsed.functions[name].line
+                        )
+                        continue
+                    }
+
                     context.typ = "function"
+                    context.data = name
+
                     function.line = curr_line
-                    parsed.functions.push(function)
+                    let parsed.functions[name] = function
                     continue
                 }
 
@@ -205,12 +214,22 @@ impl @trasm {
                     let flag = false
                     
                     for section in parsed.definitions {
-                        if def.name in section.entries.map(e => e.name) {
-                            self.log("ERROR: {} already defined".fmt(match section.typ {
-                                in const_define_section_tokens: "constant",
-                                in var_define_section_tokens: "variable",
-                            }), line[0], section.line)
-                            flag = true
+                        for e in section.entries {
+                            if def.name == e.name {
+                                let context_lines = [section.line, e.line]
+                                if section.line != parsed.definitions[-1].line {
+                                    context_lines.push(parsed.definitions[-1].line)
+                                }
+
+                                self.log("ERROR: {} '{}' already defined".fmt([
+                                    match section.typ {
+                                        in const_define_section_tokens: "constant",
+                                        in var_define_section_tokens: "variable",
+                                    },
+                                    def.name
+                                ]), line[0], context_lines)
+                                flag = true
+                            }
                         }
                     }
 
@@ -223,17 +242,17 @@ impl @trasm {
                 else if context.typ == "function" {
                     label = get_label(line)
                     if label != null {
-                        parsed.functions[-1].sections.push({ label: label, statements: [] })
+                        parsed.functions[context.data].sections.push({ label: label, statements: [] })
                         continue
                     }
 
                     let statement = parse_operation(line)
                     statement.line = curr_line
-                    parsed.functions[-1].sections[-1].statements.push(statement)
+                    parsed.functions[context.data].sections[-1].statements.push(statement)
                 }
 
                 else {
-                    self.log("ERROR: expected a define or function section", line[0])
+                    self.log("ERROR: expected a definition or function section", line[0])
                 }
             }
         }

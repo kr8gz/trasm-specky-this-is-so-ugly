@@ -6,5 +6,5 @@ return {
     not_inferable_types: ["group", "ctr", "col", "item"],
     const_define_section_tokens: ["c", "const", "consts", "constant", "constants"],
     var_define_section_tokens: ["v", "var", "vars", "variable", "variables"],
-    start_contexts: [ "start", "main", 0 ],
+    start_contexts: [ "start", "main", "0" ],
 }

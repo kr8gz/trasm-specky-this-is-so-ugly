@@ -4,8 +4,8 @@ color_reset = "\u{1B}[0m"
 color = (color) => "\u{1B}[38;5;{}m".fmt(color) 
 
 impl @trasm {
-    fmt_line: (index: @number, line: @string, indent: @number = 3) -> @string {
-        return "{} | {}".fmt([@string(index + 1).r_pad(indent), line])
+    fmt_line: (index: @number, line: @string, indent: @number = 4) -> @string {
+        return "{}| {}".fmt([@string(index).r_pad(indent), line])
     },
     
     fmt_arrows: (start: @number | @NULL, stop: @number | @NULL, line: @string) -> @string {
@@ -13,14 +13,23 @@ impl @trasm {
             return "{}|{}{}".fmt([
                 " " * line.index("|"),
                 " " * (1 + start),
-                "^" * (stop + 1 - start),
+                "^" * (1 + stop - start),
             ])
         } else {
             return ""
         }
     },
     
-    log: (self, msg: @string, context: @token | @number | [@number] = null, section_index: @number = null) {
+    log: (self, msg: @string, context: @token | @number | [@number] = null, let more_context: @number | [@number] = []) {
+        // DON'T TOUCH THIS LMAO
+        more_context is @string // thread 'main' panicked at 'index StoredValue(20715v1) not found', compiler\src\value_storage.rs:37:32
+        $.asin(0)               // note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+        // gc :bingu:
+
+        if more_context is @number {
+            more_context = [more_context]
+        }
+
         color_str = match true {
             ==msg.starts_with("ERROR"): (){
                 self.error = true
@@ -38,11 +47,26 @@ impl @trasm {
                 @token: [ context.line, context.col_start, context.col_end ],
             }
 
-            section = "" if section_index == null else @trasm::fmt_line(section_index, self.lines[section_index])
-            line_string = @trasm::fmt_line(line_index + 1, self.lines[line_index])
+            let section_lines = []
+            let last_section = null
+
+            for section in more_context {
+                if last_section != null && section - last_section > 1 {
+                    section_lines.push("    :")
+                }
+
+                section_lines.push(@trasm::fmt_line(1 + section, self.lines[section]))
+                last_section = section
+            }
+
+            if last_section != null && line_index - last_section > 1 {
+                section_lines.push("    :")
+            }
+            
+            line_string = @trasm::fmt_line(1 + line_index, self.lines[line_index])
             arrows = @trasm::fmt_arrows(col_start, col_end, line_string)
 
-            if section.length > 0 { $.print(color_str, section) }
+            if section_lines.length > 0 { $.print(color_str, section_lines.join("\n")) }
             $.print(color_str, line_string)
             if arrows.length > 0 { $.print(arrows) }
         }
