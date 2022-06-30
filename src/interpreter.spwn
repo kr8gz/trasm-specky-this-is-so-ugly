@@ -110,13 +110,13 @@ impl @trasm {
         for section in self.parsed.definitions {
             for entry in section.entries {
                 match section.typ {
-                    in const_define_section_tokens: self.constants.set(entry.name, eval_value(entry.val)),
-                    in var_define_section_tokens:   self.variables.set(entry.name, eval_value(entry.val)),
+                    in CONST_DEFINE_SECTION_TOKENS: self.constants.set(entry.name, eval_value(entry.val)),
+                    in VAR_DEFINE_SECTION_TOKENS:   self.variables.set(entry.name, eval_value(entry.val)),
                 }
             }
         }
 
-        start = self.parsed.functions.keys().filter(in start_contexts)
+        start = self.parsed.functions.keys().filter(in START_CONTEXTS)
         match start.length {
             == 0: self.log("ERROR: no start function found"),
             == 1: run_function(start[0]),

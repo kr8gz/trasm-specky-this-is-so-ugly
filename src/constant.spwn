@@ -2,9 +2,9 @@
 // rename to `constants.spwn` when it gets fixed
 
 return {
-    letters: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-    not_inferable_types: ["group", "ctr", "col", "item"],
-    const_define_section_tokens: ["c", "const", "consts", "constant", "constants"],
-    var_define_section_tokens: ["v", "var", "vars", "variable", "variables"],
-    start_contexts: [ "start", "main", "0" ],
+    LETTERS: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    NOT_INFERABLE_TYPES: ["group", "ctr", "col", "item"],
+    CONST_DEFINE_SECTION_TOKENS: ["c", "const", "consts", "constant", "constants"],
+    VAR_DEFINE_SECTION_TOKENS: ["v", "var", "vars", "variable", "variables"],
+    START_CONTEXTS: [ "start", "main", "0" ],
 }
