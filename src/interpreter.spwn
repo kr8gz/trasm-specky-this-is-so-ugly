@@ -49,12 +49,20 @@ impl @trasm {
             }
         }
 
+        arg_types = (args: [@dictionary], allowed: [@string]) -> @bool {
+            if args.length == allowed.length && allowed.map_index((e, i) => args[i].typ == e).all() {
+                return true
+            } else {
+                self.log("INFO: you are fuck")
+                return false
+            }
+        }
+
         let run_function
 
         run_statement = (name: @string, args: [@dictionary]) {
             $.print("running {} with {}".fmt([name, args]))
 
-            // we should sort these somehow lol
             match name {
                 // assignment operators and such
                 == "set": _,
@@ -81,7 +89,12 @@ impl @trasm {
                 == "mov": _,
                 == "goto": _,
                 // pseudo-built-in functions
-                == "wait": _,
+                == "out": () {
+                    $.print([arg.val for arg in args].join(""))
+                } (),
+                == "wait": () {
+                    if arg_types(args, ["num"]) { -> wait(args[0].val) } // specky i have no idea what the fuck im doing
+                } (),
             }
         }
 
