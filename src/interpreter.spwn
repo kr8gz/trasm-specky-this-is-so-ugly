@@ -2,6 +2,8 @@
 
 extract import "constant.spwn"
 
+type @temp_context_split // needed for context splitting
+
 impl @trasm {
     run: (self) {
         get_variable = (name: @string) {
@@ -60,7 +62,7 @@ impl @trasm {
 
         let run_function
 
-        run_statement = (name: @string, args: [@dictionary]) {
+        run_statement = (name: @string, args: [@dictionary], &context: @group) {
             $.print("running {} with {}".fmt([name, args]))
 
             match name {
@@ -93,12 +95,21 @@ impl @trasm {
                     $.print([arg.val for arg in args].join(""))
                 } (),
                 == "wait": () {
-                    if arg_types(args, ["num"]) { -> wait(args[0].val) } // specky i have no idea what the fuck im doing
+                    if arg_types(args, ["num"]) {
+                        $.extend_trigger_func(context, (){
+                            wait(args[0].val)
+                            @temp_context_split::context = $.trigger_fn_context() // doesn't work btw
+                        })
+                        context = @temp_context_split::context
+                    }
                 } (),
             }
         }
 
         run_function = (name: @string, args: @array = []) {
+            let start_context = ?g
+            let temp_context = start_context
+
             func = self.parsed.functions[name]
 
             if args.length != func.args.length {
@@ -113,7 +124,7 @@ impl @trasm {
             let section_index = 0
             while section_index < func.sections.length {
                 for statement in func.sections[section_index].statements {
-                    run_statement(statement.name, statement.args)
+                    run_statement(statement.name, statement.args, temp_context)
                 }
                 section_index++
             }
