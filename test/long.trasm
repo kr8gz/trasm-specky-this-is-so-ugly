@@ -19,8 +19,8 @@
 start:                  ; synonym for "0:"
     out     hello       ; $.print(hello)
     wait    2           ; wait(2)
-;    wait    1
-;    wait    5
+    wait    1
+    wait    5
 
     call    func, hello, mogus  ; call the func macro with args
     set     the, ret     ; "ret" is a reserved keyword to get the return value (if any)

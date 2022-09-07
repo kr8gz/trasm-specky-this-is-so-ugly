@@ -2,7 +2,21 @@
 
 extract import "constant.spwn"
 
-type @temp_context_split // needed for context splitting
+type @temp_context // needed for virtual context splitting
+
+constant_context = ?g // don't use this in any way (if you aren't specky 🤣)
+update_context = (set: @group) {
+    $.extend_trigger_func(constant_context, () {
+        let @temp_context::context = set // virtual context
+    })
+}
+
+context_split = (macro: () -> _) {
+    $.extend_trigger_func(@temp_context::context, (){
+        macro()
+        update_context($.trigger_fn_context())
+    })
+}
 
 impl @trasm {
     run: (self) {
@@ -62,7 +76,7 @@ impl @trasm {
 
         let run_function
 
-        run_statement = (name: @string, args: [@dictionary], &context: @group) {
+        run_statement = (name: @string, args: [@dictionary]) {
             $.print("running {} with {}".fmt([name, args]))
 
             match name {
@@ -96,11 +110,7 @@ impl @trasm {
                 } (),
                 == "wait": () {
                     if arg_types(args, ["num"]) {
-                        $.extend_trigger_func(context, (){
-                            wait(args[0].val)
-                            @temp_context_split::context = $.trigger_fn_context() // doesn't work btw
-                        })
-                        context = @temp_context_split::context
+                        context_split(() => wait(args[0].val))
                     }
                 } (),
             }
@@ -108,7 +118,7 @@ impl @trasm {
 
         run_function = (name: @string, args: @array = []) {
             let start_context = ?g
-            let temp_context = start_context
+            update_context(start_context)
 
             func = self.parsed.functions[name]
 
@@ -124,7 +134,7 @@ impl @trasm {
             let section_index = 0
             while section_index < func.sections.length {
                 for statement in func.sections[section_index].statements {
-                    run_statement(statement.name, statement.args, temp_context)
+                    run_statement(statement.name, statement.args)
                 }
                 section_index++
             }
