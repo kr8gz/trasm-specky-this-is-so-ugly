@@ -5,10 +5,12 @@
     thing   group 3          ; group 3
     conter  item ?           ; next free id
     mogus   'sus'
+    cumbor  69
 
 .vars
     a   ctr 10
     b   ctr 20
+    numbor  69
     sussy 'amog us'
 
 ;    my_obj  obj 1
@@ -22,13 +24,16 @@ start:                  ; synonym for "0:"
     wait    1
     wait    5
 
-    call    func, hello, mogus  ; call the func macro with args
-    set     the, ret     ; "ret" is a reserved keyword to get the return value (if any)
+   ;call    func, hello, mogus  ; call the func macro with args
+   ;set     the, ret     ; "ret" is a reserved keyword to get the return value (if any)
 
-   ;add     conter, 1    ; add 1 to the conter id (for no reason, just like this enttire file)
+    add     conter, 1    ; add 1 to the conter id (for no reason, just like this enttire file)
     add     item ?, 1    ; add 1 to the conter id (for no reason, just like this enttire file)
     add     ctr 30, 40    ; add 1 to the conter id (for no reason, just like this enttire file)
     add     ctr 50, ctr 60    ; add 1 to the conter id (for no reason, just like this enttire file)
+    add     numbor, 420   ; add 1 to the conter id (for no reason, just like this enttire file)
+   ;add     cumbor, 420   ; add 1 to the conter id (for no reason, just like this enttire file)
+    out numbor
 
     call    thing        ; run the trigger function with group "thing" or something (makes it a macro)
     spwn    thing        ; spawn the group/trigger function "thing" (its a macro so fail!!)
